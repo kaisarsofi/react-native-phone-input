@@ -43,14 +43,16 @@ export default function App() {
             <ScrollView contentContainerStyle={styles.container}>
               <Text style={styles.title}>react-native-phone-input</Text>
               <Text style={styles.subtitle}>
-                Starts on your device's locale country. Type a number and watch
-                it format & validate live. Try pasting "+491701234567" — the
-                country switches automatically too.
+                Pick a country, type a number, watch it format & validate live.
+                Try pasting "+491701234567" — the country switches
+                automatically. Leave off defaultCountry and it starts on your
+                device's locale instead.
               </Text>
 
               <View style={styles.field}>
                 <PhoneInput
                   ref={phoneRef}
+                  defaultCountry="IN"
                   autoFocus={false}
                   onChangeText={setPhone}
                   displayMode={displayMode}
