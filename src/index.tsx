@@ -5,3 +5,5 @@ export {
   sectionLetterFor,
 } from './countries';
 export type { Country, CountrySection } from './countries';
+export { Flag } from './Flag';
+export type { FlagType } from './Flag';
