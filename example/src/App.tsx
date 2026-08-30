@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -7,21 +8,29 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TouchableWithoutFeedback,
   View,
 } from 'react-native';
 import {
   PhoneInput,
   type CountryDisplayMode,
+  type PhoneInputRef,
   type PhoneInputValue,
 } from '@kaisarsofi/react-native-phone-input';
 
 const DISPLAY_MODES: CountryDisplayMode[] = ['both', 'flag', 'code'];
 
 export default function App() {
+  const phoneRef = useRef<PhoneInputRef>(null);
   const [phone, setPhone] = useState<PhoneInputValue | null>(null);
   const [displayMode, setDisplayMode] = useState<CountryDisplayMode>('both');
   const [showAlphabetIndex, setShowAlphabetIndex] = useState(true);
   const [groupAlphabetically, setGroupAlphabetically] = useState(true);
+
+  const dismiss = () => {
+    phoneRef.current?.blur();
+    Keyboard.dismiss();
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -29,57 +38,66 @@ export default function App() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.flex}
       >
-        <ScrollView
-          contentContainerStyle={styles.container}
-          keyboardShouldPersistTaps="handled"
-        >
-          <Text style={styles.title}>react-native-phone-input</Text>
-          <Text style={styles.subtitle}>
-            Pick a country, type a number, watch it format & validate live. Try
-            pasting "+491701234567" — the country switches automatically.
-          </Text>
+        <TouchableWithoutFeedback onPress={dismiss}>
+          <View style={styles.flex}>
+            <ScrollView contentContainerStyle={styles.container}>
+              <Text style={styles.title}>react-native-phone-input</Text>
+              <Text style={styles.subtitle}>
+                Pick a country, type a number, watch it format & validate live.
+                Try pasting "+491701234567" — the country switches
+                automatically.
+              </Text>
 
-          <View style={styles.field}>
-            <PhoneInput
-              defaultCountry="US"
-              autoFocus={false}
-              onChangeText={setPhone}
-              displayMode={displayMode}
-              showAlphabetIndex={showAlphabetIndex}
-              groupAlphabetically={groupAlphabetically}
-            />
+              <View style={styles.field}>
+                <PhoneInput
+                  ref={phoneRef}
+                  defaultCountry="US"
+                  autoFocus={false}
+                  onChangeText={setPhone}
+                  displayMode={displayMode}
+                  showAlphabetIndex={showAlphabetIndex}
+                  groupAlphabetically={groupAlphabetically}
+                />
+              </View>
+
+              <View style={styles.resultBox}>
+                <Row
+                  label="National number"
+                  value={phone?.nationalNumber ?? '—'}
+                />
+                <Row label="Country" value={phone?.country ?? '—'} />
+                <Row
+                  label="Dial code"
+                  value={phone ? `+${phone.dialCode}` : '—'}
+                />
+                <Row label="E.164" value={phone?.e164 ?? '—'} />
+                <Row
+                  label="Valid"
+                  value={phone ? (phone.isValid ? 'Yes' : 'No') : '—'}
+                  valueColor={phone?.isValid ? '#34C759' : '#FF3B30'}
+                />
+              </View>
+
+              <Text style={styles.sectionLabel}>displayMode</Text>
+              <SegmentedRow
+                options={DISPLAY_MODES}
+                value={displayMode}
+                onChange={setDisplayMode}
+              />
+
+              <ToggleRow
+                label="showAlphabetIndex"
+                value={showAlphabetIndex}
+                onChange={setShowAlphabetIndex}
+              />
+              <ToggleRow
+                label="groupAlphabetically"
+                value={groupAlphabetically}
+                onChange={setGroupAlphabetically}
+              />
+            </ScrollView>
           </View>
-
-          <View style={styles.resultBox}>
-            <Row label="National number" value={phone?.nationalNumber ?? '—'} />
-            <Row label="Country" value={phone?.country ?? '—'} />
-            <Row label="Dial code" value={phone ? `+${phone.dialCode}` : '—'} />
-            <Row label="E.164" value={phone?.e164 ?? '—'} />
-            <Row
-              label="Valid"
-              value={phone ? (phone.isValid ? 'Yes' : 'No') : '—'}
-              valueColor={phone?.isValid ? '#34C759' : '#FF3B30'}
-            />
-          </View>
-
-          <Text style={styles.sectionLabel}>displayMode</Text>
-          <SegmentedRow
-            options={DISPLAY_MODES}
-            value={displayMode}
-            onChange={setDisplayMode}
-          />
-
-          <ToggleRow
-            label="showAlphabetIndex"
-            value={showAlphabetIndex}
-            onChange={setShowAlphabetIndex}
-          />
-          <ToggleRow
-            label="groupAlphabetically"
-            value={groupAlphabetically}
-            onChange={setGroupAlphabetically}
-          />
-        </ScrollView>
+        </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
