@@ -13,7 +13,7 @@ import {
   PhoneInput,
   type CountryDisplayMode,
   type PhoneInputValue,
-} from 'react-native-phone-input';
+} from '@kaisarsofi/react-native-phone-input';
 
 const DISPLAY_MODES: CountryDisplayMode[] = ['both', 'flag', 'code'];
 

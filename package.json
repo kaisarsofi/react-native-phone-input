@@ -1,5 +1,5 @@
 {
-  "name": "react-native-phone-input",
+  "name": "@kaisarsofi/react-native-phone-input",
   "version": "0.1.0",
   "description": "React Native phone number input with country picker, live libphonenumber-js validation, and E.164 formatting. Zero native modules, works in Expo Go, bare React Native, and react-native-web, with full style control and NativeWind/shadcn-style theming support.",
   "main": "./lib/module/index.js",
@@ -91,7 +91,8 @@
   },
   "homepage": "https://github.com/kaisarsofi/react-native-phone-input#readme",
   "publishConfig": {
-    "registry": "https://registry.npmjs.org/"
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
   },
   "devDependencies": {
     "@eslint/compat": "^2.1.0",
