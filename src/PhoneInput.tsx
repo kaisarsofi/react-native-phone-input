@@ -52,6 +52,7 @@ export const PhoneInput = forwardRef<PhoneInputRef, PhoneInputProps>(
   function PhoneInputImpl(
     {
       defaultCountry,
+      fallbackCountry = 'US',
       country: controlledCountry,
       value: controlledValue,
       onChangeText,
@@ -105,7 +106,7 @@ export const PhoneInput = forwardRef<PhoneInputRef, PhoneInputProps>(
         if (device && countryList.some((c) => c.code === device.code)) {
           return device.code;
         }
-        return 'US';
+        return fallbackCountry;
       }
     );
     const [internalNational, setInternalNational] = useState(
