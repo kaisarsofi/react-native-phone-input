@@ -45,7 +45,7 @@ export function sectionLetterFor(name: string): string {
   return /[A-Z]/.test(base) ? base : '#';
 }
 
-/** Groups an (already name-sorted) country list into A–Z sections for a SectionList. */
+/** Groups an (already name-sorted) country list into contiguous A–Z sections. */
 export function groupCountriesByLetter(list: Country[]): CountrySection[] {
   const sections: CountrySection[] = [];
   let current: CountrySection | undefined;

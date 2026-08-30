@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -22,7 +23,7 @@ import { groupCountriesByLetter, type Country } from './countries';
 import { Flag } from './Flag';
 import type {
   CountryPickerRenderItemInfo,
-  FlagType,
+  CountryPickerStyles,
   PhoneInputTheme,
 } from './types';
 
@@ -41,9 +42,9 @@ export interface CountryPickerProps {
   renderCountryItem?: (info: CountryPickerRenderItemInfo) => ReactNode;
   theme?: PhoneInputTheme;
   presentationStyle?: 'pageSheet' | 'fullScreen' | 'formSheet';
-  flagType?: FlagType;
   groupAlphabetically?: boolean;
   showAlphabetIndex?: boolean;
+  styles?: CountryPickerStyles;
 }
 
 export function CountryPicker({
@@ -57,9 +58,9 @@ export function CountryPicker({
   renderCountryItem,
   theme,
   presentationStyle,
-  flagType = 'emoji',
   groupAlphabetically = true,
   showAlphabetIndex = true,
+  styles: styleOverrides,
 }: CountryPickerProps) {
   const [query, setQuery] = useState('');
   const scrollRef = useRef<ElementRef<typeof ScrollView>>(null);
@@ -165,31 +166,77 @@ export function CountryPicker({
     if (letter) jumpToLetter(letter);
   };
 
-  const renderRow = (item: Country) => {
-    const isSelected = item.code === selected?.code;
-    const onPress = () => onSelect(item);
-    if (renderCountryItem) {
-      return <>{renderCountryItem({ item, isSelected, onPress })}</>;
-    }
-    return (
-      <Pressable
-        onPress={onPress}
-        style={({ pressed }) => [
-          styles.row,
-          isSelected && styles.rowSelected,
-          pressed && styles.rowPressed,
-        ]}
-        accessibilityRole="button"
-        accessibilityLabel={`${item.name}, +${item.dialCode}`}
-      >
-        <Flag country={item} type={flagType} size={22} style={styles.flag} />
-        <Text style={styles.name} numberOfLines={1}>
-          {item.name}
-        </Text>
-        <Text style={styles.dialCode}>+{item.dialCode}</Text>
-      </Pressable>
-    );
-  };
+  const renderRow = useCallback(
+    (item: Country) => {
+      const isSelected = item.code === selected?.code;
+      const onPress = () => onSelect(item);
+      if (renderCountryItem) {
+        return <>{renderCountryItem({ item, isSelected, onPress })}</>;
+      }
+      return (
+        <Pressable
+          onPress={onPress}
+          style={({ pressed }) => [
+            styles.row,
+            styleOverrides?.row,
+            isSelected && [styles.rowSelected, styleOverrides?.rowSelected],
+            pressed && styles.rowPressed,
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel={`${item.name}, +${item.dialCode}`}
+        >
+          <Flag
+            country={item}
+            size={22}
+            style={[styles.flag, styleOverrides?.flag]}
+          />
+          <Text style={[styles.name, styleOverrides?.name]} numberOfLines={1}>
+            {item.name}
+          </Text>
+          <Text style={[styles.dialCode, styleOverrides?.dialCode]}>
+            +{item.dialCode}
+          </Text>
+        </Pressable>
+      );
+    },
+    [selected, onSelect, renderCountryItem, styleOverrides]
+  );
+
+  // Memoized separately from the rest of the tree so sidebar drag-scrubbing
+  // (which updates `activeLetter` on every touch move) doesn't force React to
+  // re-render every one of the ~240 rows on each frame — only the sidebar and
+  // the letter bubble, which actually depend on `activeLetter`, do.
+  const listContent = useMemo(
+    () => (
+      <>
+        {filtered.length === 0 && (
+          <Text style={styles.empty}>No countries found</Text>
+        )}
+        {sections.map((section) => (
+          <View key={section.letter || 'all'}>
+            {showHeaders && section.letter ? (
+              <View
+                style={[styles.sectionHeader, styleOverrides?.sectionHeader]}
+              >
+                <Text
+                  style={[
+                    styles.sectionHeaderText,
+                    styleOverrides?.sectionHeaderText,
+                  ]}
+                >
+                  {section.letter}
+                </Text>
+              </View>
+            ) : null}
+            {section.data.map((item) => (
+              <View key={item.code}>{renderRow(item)}</View>
+            ))}
+          </View>
+        ))}
+      </>
+    ),
+    [filtered.length, sections, showHeaders, styleOverrides, renderRow]
+  );
 
   return (
     <Modal
@@ -206,6 +253,7 @@ export function CountryPicker({
           theme?.backgroundColor
             ? { backgroundColor: theme.backgroundColor }
             : null,
+          styleOverrides?.container,
         ]}
       >
         {Platform.OS === 'ios' &&
@@ -215,19 +263,26 @@ export function CountryPicker({
             </View>
           )}
 
-        <View style={styles.header}>
-          <Text style={styles.title}>Select a country</Text>
+        <View style={[styles.header, styleOverrides?.header]}>
+          <Text style={[styles.title, styleOverrides?.title]}>
+            Select a country
+          </Text>
           <Pressable
             onPress={onClose}
             hitSlop={8}
             style={({ pressed }) => [
               styles.closeButton,
+              styleOverrides?.closeButton,
               pressed && styles.closeButtonPressed,
             ]}
             accessibilityRole="button"
             accessibilityLabel="Close"
           >
-            <Text style={styles.closeButtonText}>✕</Text>
+            <Text
+              style={[styles.closeButtonText, styleOverrides?.closeButtonText]}
+            >
+              ✕
+            </Text>
           </Pressable>
         </View>
 
@@ -240,6 +295,7 @@ export function CountryPicker({
             style={[
               styles.search,
               theme?.textColor ? { color: theme.textColor } : null,
+              styleOverrides?.search,
             ]}
             autoCorrect={false}
             autoCapitalize="none"
@@ -255,23 +311,7 @@ export function CountryPicker({
               showSidebar ? styles.listContentWithJump : undefined
             }
           >
-            {filtered.length === 0 && (
-              <Text style={styles.empty}>No countries found</Text>
-            )}
-            {sections.map((section) => (
-              <View key={section.letter || 'all'}>
-                {showHeaders && section.letter ? (
-                  <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionHeaderText}>
-                      {section.letter}
-                    </Text>
-                  </View>
-                ) : null}
-                {section.data.map((item) => (
-                  <View key={item.code}>{renderRow(item)}</View>
-                ))}
-              </View>
-            ))}
+            {listContent}
           </ScrollView>
 
           {showSidebar && (
@@ -304,9 +344,13 @@ export function CountryPicker({
                   <Text
                     style={[
                       styles.sidebarLetter,
+                      styleOverrides?.sidebarLetter,
                       !availableLetters.has(letter) &&
                         styles.sidebarLetterDisabled,
-                      activeLetter === letter && styles.sidebarLetterActive,
+                      activeLetter === letter && [
+                        styles.sidebarLetterActive,
+                        styleOverrides?.sidebarLetterActive,
+                      ],
                     ]}
                   >
                     {letter}
