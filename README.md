@@ -41,6 +41,22 @@ Most phone-input libraries for React Native fall into one of two camps: bundle a
 - 🔤 **A picker that scales past 240 countries.** The alphabet index isn't a decoration — it's backed by analytically-computed row offsets (not `onLayout` measurement, which doesn't reliably fire through a `Modal`), so tapping a letter lands exactly on that section every time, on iOS, Android, and web alike.
 - 🎨 **Restyle it, don't fight it.** `pickerStyles` covers every element of the country picker individually — header, search box, row, selected row, section header, sidebar letter — so a full dark-mode or brand re-skin doesn't mean forking the component.
 
+## How it compares
+
+| Feature | This package | react-native-phone-number-input | react-native-phone-input | react-native-international-phone-number |
+| --- | --- | --- | --- | --- |
+| Expo Go | ✅ | ⚠️ pulls a native-ish flag dep | ❌ requires a dev build | ✅ |
+| Native modules | ❌ zero | ⚠️ via `react-native-country-picker-modal` | ✅ `@react-native-picker/picker` (hard dep) | ❌ zero |
+| Web (`react-native-web`) | ✅ tested | ⚠️ undocumented | ⚠️ undocumented | ⚠️ undocumented |
+| TypeScript | ✅ | ⚠️ types unmaintained since 2021 | ✅ | ✅ |
+| E.164 output | ✅ | ✅ | ✅ | ✅ |
+| A–Z alphabet index | ✅ | ❌ | ❌ | ❌ |
+| Fabric / New Architecture | ✅ (pure JS) | ? unverified | ? unverified | ? unverified |
+| Auto-detect country from pasted number | ✅ | ❌ | ❌ | ❌ (open feature request, unaddressed) |
+| Last published to npm | — | 2021-05-05 | 2026-06-02 | 2026-03-18 |
+
+<sub>Competitor data pulled from the npm registry and each project's GitHub issues; see their repos for current status.</sub>
+
 ## Usage
 
 ```tsx
