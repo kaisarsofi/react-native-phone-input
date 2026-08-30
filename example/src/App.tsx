@@ -23,7 +23,7 @@ export default function App() {
   const [phone, setPhone] = useState<PhoneInputValue | null>(null);
   const [displayMode, setDisplayMode] = useState<CountryDisplayMode>('both');
   const [flagType, setFlagType] = useState<FlagType>('badge');
-  const [showQuickJump, setShowQuickJump] = useState(true);
+  const [showAlphabetIndex, setShowAlphabetIndex] = useState(true);
   const [groupAlphabetically, setGroupAlphabetically] = useState(true);
 
   return (
@@ -48,7 +48,7 @@ export default function App() {
               onChangeText={setPhone}
               displayMode={displayMode}
               flagType={flagType}
-              showQuickJump={showQuickJump}
+              showAlphabetIndex={showAlphabetIndex}
               groupAlphabetically={groupAlphabetically}
             />
           </View>
@@ -80,9 +80,9 @@ export default function App() {
           />
 
           <ToggleRow
-            label="showQuickJump"
-            value={showQuickJump}
-            onChange={setShowQuickJump}
+            label="showAlphabetIndex"
+            value={showAlphabetIndex}
+            onChange={setShowAlphabetIndex}
           />
           <ToggleRow
             label="groupAlphabetically"

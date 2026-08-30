@@ -78,7 +78,7 @@ export interface PhoneInputProps extends Omit<
   showCountryPicker?: boolean;
   /** What the country control shows: 'flag' | 'code' | 'both' (default: 'both') */
   displayMode?: CountryDisplayMode;
-  /** How the flag itself is rendered (default: 'badge', see {@link FlagType}) */
+  /** How the flag itself is rendered (default: 'emoji', see {@link FlagType}) */
   flagType?: FlagType;
   /** Render a completely custom flag element instead of the built-in one */
   renderFlag?: (country: Country) => React.ReactNode;
@@ -88,10 +88,17 @@ export interface PhoneInputProps extends Omit<
   searchPlaceholder?: string;
   /** Hide the search box inside the country picker */
   disableSearch?: boolean;
-  /** Group the picker list into A–Z sections with sticky letter headers (default: true) */
+  /**
+   * Group the picker list into A–Z sections with letter headers (default: true).
+   * Independent of {@link showAlphabetIndex} — either can be on without the other.
+   */
   groupAlphabetically?: boolean;
-  /** Show an A–Z quick-jump index on the right edge of the picker list (default: true) */
-  showQuickJump?: boolean;
+  /**
+   * Show an A–Z index sidebar on the right edge of the picker for tap/drag jumping
+   * (default: true). Works whether or not {@link groupAlphabetically} is on: with
+   * it off, the list stays flat but the index still jumps to the right country.
+   */
+  showAlphabetIndex?: boolean;
 
   containerStyle?: StyleProp<ViewStyle>;
   inputStyle?: StyleProp<TextStyle>;
