@@ -31,7 +31,13 @@ import type {
 function buildValue(nationalNumber: string, country: Country): PhoneInputValue {
   const digits = nationalNumber.replace(/\D/g, '');
   const valid = digits.length > 0 && isValidPhoneNumber(digits, country.code);
-  const e164 = valid ? `+${country.dialCode}${digits}` : null;
+  // Derived via libphonenumber-js rather than `+${dialCode}${digits}`: some
+  // countries (the 23 NANP territories sharing "+1") store an extended dial
+  // code like "1876" for picker display, which would double-count the area
+  // code if naively concatenated.
+  const e164 = valid
+    ? (parsePhoneNumberFromString(digits, country.code)?.number ?? null)
+    : null;
   return {
     nationalNumber: digits,
     country: country.code,
