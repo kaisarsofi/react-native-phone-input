@@ -157,5 +157,8 @@
       "release-it"
     ],
     "version": "0.63.0"
+  },
+  "dependencies": {
+    "libphonenumber-js": "^1.13.12"
   }
 }

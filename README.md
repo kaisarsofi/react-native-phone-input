@@ -14,11 +14,11 @@ npm install react-native-phone-input
 
 
 ```js
-import { multiply } from 'react-native-phone-input';
+import { COUNTRIES, getCountryByCode } from 'react-native-phone-input';
 
 // ...
 
-const result = multiply(3, 7);
+const us = getCountryByCode('US');
 ```
 
 

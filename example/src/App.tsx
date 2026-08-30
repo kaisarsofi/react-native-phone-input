@@ -1,12 +1,10 @@
 import { Text, View, StyleSheet } from 'react-native';
-import { multiply } from 'react-native-phone-input';
-
-const result = multiply(3, 7);
+import { COUNTRIES } from 'react-native-phone-input';
 
 export default function App() {
   return (
     <View style={styles.container}>
-      <Text>Result: {result}</Text>
+      <Text>{COUNTRIES.length} countries loaded</Text>
     </View>
   );
 }
