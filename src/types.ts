@@ -125,6 +125,12 @@ export interface PhoneInputProps extends Omit<
    * it off, the list stays flat but the index still jumps to the right country.
    */
   showAlphabetIndex?: boolean;
+  /**
+   * When the user types or pastes a number that starts with "+" and its calling
+   * code resolves to a country in the current list, auto-switch the selected
+   * country to match (e.g. pasting "+919622419987" selects India). Default: true.
+   */
+  autoDetectCountry?: boolean;
 
   /** Style for the outer wrapper (equivalent to `containerStyle`, kept as the plain
    * `style` prop so style-interop tooling like NativeWind's `cssInterop` — the same

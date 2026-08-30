@@ -1,4 +1,8 @@
-import { AsYouType, isValidPhoneNumber } from 'libphonenumber-js';
+import {
+  AsYouType,
+  isValidPhoneNumber,
+  parsePhoneNumberFromString,
+} from 'libphonenumber-js';
 import type { CountryCode } from 'libphonenumber-js';
 import {
   forwardRef,
@@ -53,6 +57,7 @@ export const PhoneInput = forwardRef<PhoneInputRef, PhoneInputProps>(
       disableSearch,
       groupAlphabetically = true,
       showAlphabetIndex = true,
+      autoDetectCountry = true,
       style,
       containerStyle,
       inputStyle,
@@ -130,11 +135,37 @@ export const PhoneInput = forwardRef<PhoneInputRef, PhoneInputProps>(
 
     const handleChangeText = useCallback(
       (text: string) => {
+        if (autoDetectCountry && text.trim().startsWith('+')) {
+          const parsed = parsePhoneNumberFromString(text.trim());
+          const detected = getCountryByCode(parsed?.country);
+          if (
+            detected &&
+            detected.code !== selectedCountry.code &&
+            countryList.some((c) => c.code === detected.code)
+          ) {
+            const digits = parsed!.nationalNumber as string;
+            if (controlledValue === undefined) setInternalNational(digits);
+            if (controlledCountry === undefined)
+              setInternalCountryCode(detected.code);
+            onChangeCountry?.(detected);
+            emitChange(digits, detected);
+            return;
+          }
+        }
+
         const digits = text.replace(/\D/g, '');
         if (controlledValue === undefined) setInternalNational(digits);
         emitChange(digits, selectedCountry);
       },
-      [controlledValue, emitChange, selectedCountry]
+      [
+        autoDetectCountry,
+        controlledCountry,
+        controlledValue,
+        countryList,
+        emitChange,
+        onChangeCountry,
+        selectedCountry,
+      ]
     );
 
     const handleSelectCountry = useCallback(
