@@ -23,7 +23,7 @@ If this saves you from wiring up validation and a country list by hand, a ⭐ on
 
 - ✅ Live phone validation & E.164 formatting via [`libphonenumber-js`](https://github.com/catamphetamine/libphonenumber-js) (pure JS, tree-shakeable — the same engine behind Google's libphonenumber)
 - ⌨️ Formats the number as you type (`AsYouType`)
-- 🌍 241 countries & territories (ISO 3166-1 codes, ITU dial codes) bundled as plain JSON — no network fetch, no extra install
+- 🌍 245 countries & territories — exact parity with `libphonenumber-js`'s supported regions (ISO 3166-1 codes, ITU dial codes), bundled as plain JSON — no network fetch, no extra install
 - 🔤 A–Z alphabet index on the country picker, tap-to-jump or drag-to-scrub, like iOS Contacts
 - 🎛️ Independent picker layout controls — section headers and the index sidebar toggle separately
 - 🎨 Fully stylable — quick color tokens via `theme`, a plain RN `style` object per element via `pickerStyles`, or full takeover via `renderFlag` / `renderCountryItem`
