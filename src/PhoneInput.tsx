@@ -53,7 +53,7 @@ export const PhoneInput = forwardRef<PhoneInputRef, PhoneInputProps>(
       searchPlaceholder,
       disableSearch,
       groupAlphabetically = true,
-      showQuickJump = true,
+      showAlphabetIndex = true,
       containerStyle,
       inputStyle,
       dialCodeStyle,
@@ -244,7 +244,7 @@ export const PhoneInput = forwardRef<PhoneInputRef, PhoneInputProps>(
             presentationStyle={pickerPresentationStyle}
             flagType={flagType}
             groupAlphabetically={groupAlphabetically}
-            showQuickJump={showQuickJump}
+            showAlphabetIndex={showAlphabetIndex}
           />
         )}
       </View>

@@ -43,7 +43,7 @@ export interface CountryPickerProps {
   presentationStyle?: 'pageSheet' | 'fullScreen' | 'formSheet';
   flagType?: FlagType;
   groupAlphabetically?: boolean;
-  showQuickJump?: boolean;
+  showAlphabetIndex?: boolean;
 }
 
 export function CountryPicker({
@@ -59,7 +59,7 @@ export function CountryPicker({
   presentationStyle,
   flagType = 'emoji',
   groupAlphabetically = true,
-  showQuickJump = true,
+  showAlphabetIndex = true,
 }: CountryPickerProps) {
   const [query, setQuery] = useState('');
   const scrollRef = useRef<ElementRef<typeof ScrollView>>(null);
@@ -100,15 +100,22 @@ export function CountryPicker({
     );
   }, [countries, query]);
 
-  const isSectioned = groupAlphabetically && !query.trim();
+  const isSearching = !!query.trim();
 
+  // Countries are always grouped into A-Z chunks (unless searching) so the
+  // alphabet index has something to jump to even when section headers
+  // (groupAlphabetically) are turned off — the two are independent: headers
+  // control what's visible in the list, the index controls the sidebar.
   const sections = useMemo(
     () =>
-      isSectioned
-        ? groupCountriesByLetter(filtered)
-        : [{ letter: '', data: filtered }],
-    [filtered, isSectioned]
+      isSearching
+        ? [{ letter: '', data: filtered }]
+        : groupCountriesByLetter(filtered),
+    [filtered, isSearching]
   );
+
+  const showHeaders = groupAlphabetically && !isSearching;
+  const showSidebar = showAlphabetIndex && !isSearching && sections.length > 3;
 
   const availableLetters = useMemo(
     () => new Set(sections.map((s) => s.letter)),
@@ -124,11 +131,11 @@ export function CountryPicker({
     let offset = 0;
     for (const section of sections) {
       offsets[section.letter] = offset;
-      if (isSectioned && section.letter) offset += HEADER_HEIGHT;
+      if (showHeaders && section.letter) offset += HEADER_HEIGHT;
       offset += section.data.length * ROW_HEIGHT;
     }
     return offsets;
-  }, [sections, isSectioned]);
+  }, [sections, showHeaders]);
 
   const jumpToLetter = (letter: string) => {
     let target = letter;
@@ -234,9 +241,7 @@ export function CountryPicker({
             ref={scrollRef}
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={
-              showQuickJump && isSectioned
-                ? styles.listContentWithJump
-                : undefined
+              showSidebar ? styles.listContentWithJump : undefined
             }
           >
             {filtered.length === 0 && (
@@ -244,7 +249,7 @@ export function CountryPicker({
             )}
             {sections.map((section) => (
               <View key={section.letter || 'all'}>
-                {isSectioned && section.letter ? (
+                {showHeaders && section.letter ? (
                   <View style={styles.sectionHeader}>
                     <Text style={styles.sectionHeaderText}>
                       {section.letter}
@@ -258,7 +263,7 @@ export function CountryPicker({
             ))}
           </ScrollView>
 
-          {showQuickJump && isSectioned && sections.length > 3 && (
+          {showSidebar && (
             <View
               style={styles.sidebar}
               onLayout={(e) => {
