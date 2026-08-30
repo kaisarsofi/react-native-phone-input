@@ -6,9 +6,9 @@ A **React Native phone number input, country code picker, and dial code selector
 
 Works in **Expo Go**, **Expo dev builds**, **bare React Native**, and **`react-native-web`**, on both the old (Paper) and new (Fabric) architecture — because it's pure JavaScript with no native code to reconcile.
 
-![npm version](https://img.shields.io/npm/v/react-native-phone-input.svg?style=flat-square)
-![npm downloads](https://img.shields.io/npm/dm/react-native-phone-input.svg?style=flat-square)
-![license](https://img.shields.io/npm/l/react-native-phone-input.svg?style=flat-square)
+![npm version](https://img.shields.io/npm/v/@kaisarsofi/react-native-phone-input.svg?style=flat-square)
+![npm downloads](https://img.shields.io/npm/dm/@kaisarsofi/react-native-phone-input.svg?style=flat-square)
+![license](https://img.shields.io/npm/l/@kaisarsofi/react-native-phone-input.svg?style=flat-square)
 ![types](https://img.shields.io/badge/types-included-3178C6.svg?style=flat-square)
 ![expo](https://img.shields.io/badge/Expo-Go%20%26%20dev%20builds-000.svg?style=flat-square&logo=expo)
 ![new arch](https://img.shields.io/badge/New%20Architecture-supported-61DAFB.svg?style=flat-square)
@@ -44,7 +44,7 @@ Most phone-input libraries for React Native fall into one of two camps: bundle a
 ## Usage
 
 ```tsx
-import { PhoneInput, type PhoneInputValue } from 'react-native-phone-input';
+import { PhoneInput, type PhoneInputValue } from '@kaisarsofi/react-native-phone-input';
 
 export default function App() {
   return (
@@ -93,11 +93,11 @@ ref.current?.getValue(); // PhoneInputValue
 ## Install
 
 ```bash
-npm install react-native-phone-input
+npm install @kaisarsofi/react-native-phone-input
 ```
 
 ```bash
-yarn add react-native-phone-input
+yarn add @kaisarsofi/react-native-phone-input
 ```
 
 No peer native dependencies, no `expo install`, no `pod install`. `libphonenumber-js` ships as a regular JS dependency.
