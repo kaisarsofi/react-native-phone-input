@@ -208,15 +208,26 @@ export function CountryPicker({
             : null,
         ]}
       >
+        {Platform.OS === 'ios' &&
+          (presentationStyle ?? 'pageSheet') === 'pageSheet' && (
+            <View style={styles.dragHandleWrap}>
+              <View style={styles.dragHandle} />
+            </View>
+          )}
+
         <View style={styles.header}>
           <Text style={styles.title}>Select a country</Text>
           <Pressable
             onPress={onClose}
-            hitSlop={12}
+            hitSlop={8}
+            style={({ pressed }) => [
+              styles.closeButton,
+              pressed && styles.closeButtonPressed,
+            ]}
             accessibilityRole="button"
             accessibilityLabel="Close"
           >
-            <Text style={styles.closeText}>Close</Text>
+            <Text style={styles.closeButtonText}>✕</Text>
           </Pressable>
         </View>
 
@@ -321,27 +332,50 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
+  dragHandleWrap: {
+    alignItems: 'center',
+    paddingTop: 8,
+  },
+  dragHandle: {
+    width: 36,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#D1D1D6',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 16,
   },
   title: {
-    fontSize: 17,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '700',
   },
-  closeText: {
-    fontSize: 16,
-    color: '#007AFF',
+  closeButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F2F2F7',
+  },
+  closeButtonPressed: {
+    backgroundColor: '#E5E5EA',
+  },
+  closeButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#8E8E93',
   },
   search: {
-    marginHorizontal: 16,
-    marginBottom: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
+    marginHorizontal: 20,
+    marginBottom: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
     backgroundColor: '#F2F2F7',
     fontSize: 16,
   },
@@ -356,8 +390,10 @@ const styles = StyleSheet.create({
     height: ROW_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     gap: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#E5E5EA',
   },
   rowSelected: {
     backgroundColor: '#F2F2F7',
@@ -385,7 +421,7 @@ const styles = StyleSheet.create({
     height: HEADER_HEIGHT,
     justifyContent: 'center',
     backgroundColor: '#F2F2F7',
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
   },
   sectionHeaderText: {
     fontSize: 13,
