@@ -48,12 +48,6 @@
     "flag": "🇦🇮"
   },
   {
-    "code": "AQ",
-    "name": "Antarctica",
-    "dialCode": "672",
-    "flag": "🇦🇶"
-  },
-  {
     "code": "AG",
     "name": "Antigua and Barbuda",
     "dialCode": "1268",
@@ -76,6 +70,12 @@
     "name": "Aruba",
     "dialCode": "297",
     "flag": "🇦🇼"
+  },
+  {
+    "code": "AC",
+    "name": "Ascension Island",
+    "dialCode": "247",
+    "flag": "🇦🇨"
   },
   {
     "code": "AU",
@@ -238,6 +238,12 @@
     "name": "Cape Verde",
     "dialCode": "238",
     "flag": "🇨🇻"
+  },
+  {
+    "code": "BQ",
+    "name": "Caribbean Netherlands",
+    "dialCode": "599",
+    "flag": "🇧🇶"
   },
   {
     "code": "KY",
@@ -1032,12 +1038,6 @@
     "flag": "🇵🇭"
   },
   {
-    "code": "PN",
-    "name": "Pitcairn Islands",
-    "dialCode": "64",
-    "flag": "🇵🇳"
-  },
-  {
     "code": "PL",
     "name": "Poland",
     "dialCode": "48",
@@ -1092,10 +1092,22 @@
     "flag": "🇧🇱"
   },
   {
+    "code": "SH",
+    "name": "Saint Helena",
+    "dialCode": "290",
+    "flag": "🇸🇭"
+  },
+  {
     "code": "MF",
     "name": "Saint Martin",
     "dialCode": "590",
     "flag": "🇲🇫"
+  },
+  {
+    "code": "PM",
+    "name": "Saint Pierre and Miquelon",
+    "dialCode": "508",
+    "flag": "🇵🇲"
   },
   {
     "code": "WS",
@@ -1320,6 +1332,12 @@
     "flag": "🇹🇹"
   },
   {
+    "code": "TA",
+    "name": "Tristan da Cunha",
+    "dialCode": "290",
+    "flag": "🇹🇦"
+  },
+  {
     "code": "TN",
     "name": "Tunisia",
     "dialCode": "216",
@@ -1426,6 +1444,12 @@
     "name": "Wallis and Futuna",
     "dialCode": "681",
     "flag": "🇼🇫"
+  },
+  {
+    "code": "EH",
+    "name": "Western Sahara",
+    "dialCode": "212",
+    "flag": "🇪🇭"
   },
   {
     "code": "YE",

@@ -1,6 +1,8 @@
 import { describe, expect, it } from '@jest/globals';
+import { getCountries, isSupportedCountry } from 'libphonenumber-js';
 import {
   COUNTRIES,
+  getCountryByCallingCode,
   getCountryByCode,
   groupCountriesByLetter,
   sectionLetterFor,
@@ -27,6 +29,21 @@ describe('countries', () => {
     for (const country of COUNTRIES) {
       expect(country.flag.length).toBeGreaterThan(0);
     }
+  });
+
+  it('matches libphonenumber-js supported regions exactly', () => {
+    const ours = COUNTRIES.map((c) => c.code).sort();
+    const lib = getCountries().sort();
+    expect(ours).toEqual(lib);
+    for (const country of COUNTRIES) {
+      expect(isSupportedCountry(country.code)).toBe(true);
+    }
+  });
+
+  it('resolves the primary country for a shared calling code', () => {
+    expect(getCountryByCallingCode('44')?.code).toBe('GB');
+    expect(getCountryByCallingCode('1')?.code).toBe('US');
+    expect(getCountryByCallingCode(undefined)).toBeUndefined();
   });
 
   it('groups countries into contiguous A–Z sections', () => {

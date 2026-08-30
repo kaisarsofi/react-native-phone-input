@@ -14,7 +14,12 @@ export interface PhoneInputValue {
   nationalNumber: string;
   /** ISO 3166-1 alpha-2 country selected (e.g. "US") */
   country: CountryCode;
-  /** Calling code without "+" (e.g. "1") */
+  /**
+   * Calling code without "+" (e.g. "1"). For the 23 NANP territories that
+   * share "+1" (Jamaica, Bermuda, etc.) this includes the distinguishing area
+   * code (e.g. "1876") so the picker can tell them apart — use `e164`, not
+   * `dialCode` + `nationalNumber`, to reconstruct the full number.
+   */
   dialCode: string;
   /** Full E.164 formatted number if valid, e.g. "+14155552671" */
   e164: string | null;
