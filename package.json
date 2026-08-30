@@ -42,8 +42,15 @@
   },
   "keywords": [
     "react-native",
+    "expo",
+    "phone-input",
+    "phone-number",
+    "country-picker",
+    "libphonenumber",
+    "validation",
     "ios",
-    "android"
+    "android",
+    "web"
   ],
   "repository": {
     "type": "git",
