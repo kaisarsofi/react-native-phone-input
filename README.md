@@ -220,7 +220,7 @@ Or take over the entire picker row:
 | `disableSearch` | `boolean` | `false` | Hide the search box in the picker |
 | `groupAlphabetically` | `boolean` | `true` | Group the picker into A–Z sections with letter headers |
 | `showAlphabetIndex` | `boolean` | `true` | Show the A–Z index sidebar (independent of `groupAlphabetically`) |
-| `autoDetectCountry` | `boolean` | `true` | Typing/pasting a number starting with `+` auto-switches the selected country to match its calling code (e.g. pasting `+919622419987` selects India) |
+| `autoDetectCountry` | `boolean` | `true` | Typing/pasting a number starting with `+` auto-switches the selected country to match its calling code (e.g. pasting `+911234567890` selects India) |
 | `renderFlag` | `(country) => ReactNode` | — | Custom flag renderer |
 | `renderCountryItem` | `(info) => ReactNode` | — | Custom picker row renderer |
 | `theme` | `PhoneInputTheme` | — | Color/radius/font tokens |

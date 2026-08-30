@@ -128,7 +128,7 @@ export interface PhoneInputProps extends Omit<
   /**
    * When the user types or pastes a number that starts with "+" and its calling
    * code resolves to a country in the current list, auto-switch the selected
-   * country to match (e.g. pasting "+919622419987" selects India). Default: true.
+   * country to match (e.g. pasting "+911234567890" selects India). Default: true.
    */
   autoDetectCountry?: boolean;
 

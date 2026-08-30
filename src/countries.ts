@@ -1,4 +1,5 @@
 import type { CountryCode } from 'libphonenumber-js';
+import metadata from 'libphonenumber-js/metadata.min.json';
 import countriesData from './data/countries.json';
 
 export interface Country {
@@ -30,6 +31,25 @@ export const COUNTRIES_BY_CODE: Record<string, Country> = COUNTRIES.reduce(
 export function getCountryByCode(code?: string | null): Country | undefined {
   if (!code) return undefined;
   return COUNTRIES_BY_CODE[code.toUpperCase()];
+}
+
+/** Some calling codes are shared by several countries (e.g. "44" -> GB, GG, IM,
+ * JE). libphonenumber-js's own metadata lists the primary/most-populous country
+ * for each shared calling code first — used as the fallback when a pasted/typed
+ * number's calling code is known but its digits don't match any one country's
+ * valid number patterns closely enough to disambiguate. */
+const CALLING_CODE_TO_MAIN_COUNTRY: Record<string, string> = Object.fromEntries(
+  Object.entries(
+    (metadata as { country_calling_codes: Record<string, string[]> })
+      .country_calling_codes
+  ).map(([callingCode, codes]) => [callingCode, codes[0]!])
+);
+
+export function getCountryByCallingCode(
+  callingCode?: string | null
+): Country | undefined {
+  if (!callingCode) return undefined;
+  return getCountryByCode(CALLING_CODE_TO_MAIN_COUNTRY[callingCode]);
 }
 
 /** Base A–Z letter for grouping, folding accents (e.g. "Å" -> "A") so every

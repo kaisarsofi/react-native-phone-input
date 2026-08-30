@@ -14,7 +14,11 @@ import {
   type ElementRef,
 } from 'react';
 import { Pressable, Text, TextInput, View, StyleSheet } from 'react-native';
-import { COUNTRIES, getCountryByCode } from './countries';
+import {
+  COUNTRIES,
+  getCountryByCallingCode,
+  getCountryByCode,
+} from './countries';
 import { CountryPicker } from './CountryPicker';
 import { Flag } from './Flag';
 import type {
@@ -137,7 +141,9 @@ export const PhoneInput = forwardRef<PhoneInputRef, PhoneInputProps>(
       (text: string) => {
         if (autoDetectCountry && text.trim().startsWith('+')) {
           const parsed = parsePhoneNumberFromString(text.trim());
-          const detected = getCountryByCode(parsed?.country);
+          const detected =
+            getCountryByCode(parsed?.country) ??
+            getCountryByCallingCode(parsed?.countryCallingCode);
           if (
             detected &&
             detected.code !== selectedCountry.code &&
