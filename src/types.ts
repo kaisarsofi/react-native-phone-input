@@ -6,10 +6,8 @@ import type {
   ViewStyle,
 } from 'react-native';
 import type { Country } from './countries';
-import type { FlagType } from './Flag';
 
 export type { Country };
-export type { FlagType };
 
 export interface PhoneInputValue {
   /** Raw digits the user typed, national significant number, no dial code (e.g. "4155552671") */
@@ -52,9 +50,39 @@ export interface PhoneInputTheme {
 /** What the country control (left of the input) shows. */
 export type CountryDisplayMode = 'flag' | 'code' | 'both';
 
+/**
+ * Per-element style overrides for the country picker modal, so every part of it
+ * can be fully re-skinned — not just colors via `theme`. Each slot is merged on
+ * top of the built-in style, so you only need to specify what you're changing.
+ */
+export interface CountryPickerStyles {
+  /** The modal's root SafeAreaView */
+  container?: StyleProp<ViewStyle>;
+  /** Row containing the title and close button */
+  header?: StyleProp<ViewStyle>;
+  title?: StyleProp<TextStyle>;
+  closeButton?: StyleProp<ViewStyle>;
+  closeButtonText?: StyleProp<TextStyle>;
+  search?: StyleProp<TextStyle>;
+  /** A single country row */
+  row?: StyleProp<ViewStyle>;
+  /** Merged on top of `row` when that row is the selected country */
+  rowSelected?: StyleProp<ViewStyle>;
+  flag?: StyleProp<TextStyle>;
+  name?: StyleProp<TextStyle>;
+  dialCode?: StyleProp<TextStyle>;
+  /** The "A", "B", "C"... letter header above each section */
+  sectionHeader?: StyleProp<ViewStyle>;
+  sectionHeaderText?: StyleProp<TextStyle>;
+  /** A single letter in the right-edge alphabet index */
+  sidebarLetter?: StyleProp<TextStyle>;
+  /** Merged on top of `sidebarLetter` for the currently-active letter */
+  sidebarLetterActive?: StyleProp<TextStyle>;
+}
+
 export interface PhoneInputProps extends Omit<
   TextInputProps,
-  'value' | 'onChangeText' | 'style' | 'onChange'
+  'value' | 'onChangeText' | 'onChange' | 'style'
 > {
   /** ISO 3166-1 alpha-2 default/initial country, e.g. "US" */
   defaultCountry?: CountryCode;
@@ -78,8 +106,6 @@ export interface PhoneInputProps extends Omit<
   showCountryPicker?: boolean;
   /** What the country control shows: 'flag' | 'code' | 'both' (default: 'both') */
   displayMode?: CountryDisplayMode;
-  /** How the flag itself is rendered (default: 'emoji', see {@link FlagType}) */
-  flagType?: FlagType;
   /** Render a completely custom flag element instead of the built-in one */
   renderFlag?: (country: Country) => React.ReactNode;
   /** Render a fully custom row inside the country picker list */
@@ -100,11 +126,18 @@ export interface PhoneInputProps extends Omit<
    */
   showAlphabetIndex?: boolean;
 
+  /** Style for the outer wrapper (equivalent to `containerStyle`, kept as the plain
+   * `style` prop so style-interop tooling like NativeWind's `cssInterop` — the same
+   * mechanism shadcn-style RN kits (e.g. react-native-reusables) rely on — can target
+   * it by the standard prop name). */
+  style?: StyleProp<ViewStyle>;
   containerStyle?: StyleProp<ViewStyle>;
   inputStyle?: StyleProp<TextStyle>;
   dialCodeStyle?: StyleProp<TextStyle>;
   flagStyle?: StyleProp<TextStyle>;
   countryPickerButtonStyle?: StyleProp<ViewStyle>;
+  /** Per-element style overrides for the country picker modal (see {@link CountryPickerStyles}) */
+  pickerStyles?: CountryPickerStyles;
 
   /** Visual theme tokens, merged under the style props above */
   theme?: PhoneInputTheme;

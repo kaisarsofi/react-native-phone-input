@@ -12,17 +12,14 @@ import {
 import {
   PhoneInput,
   type CountryDisplayMode,
-  type FlagType,
   type PhoneInputValue,
 } from 'react-native-phone-input';
 
 const DISPLAY_MODES: CountryDisplayMode[] = ['both', 'flag', 'code'];
-const FLAG_TYPES: FlagType[] = ['badge', 'emoji'];
 
 export default function App() {
   const [phone, setPhone] = useState<PhoneInputValue | null>(null);
   const [displayMode, setDisplayMode] = useState<CountryDisplayMode>('both');
-  const [flagType, setFlagType] = useState<FlagType>('badge');
   const [showAlphabetIndex, setShowAlphabetIndex] = useState(true);
   const [groupAlphabetically, setGroupAlphabetically] = useState(true);
 
@@ -47,7 +44,6 @@ export default function App() {
               autoFocus={false}
               onChangeText={setPhone}
               displayMode={displayMode}
-              flagType={flagType}
               showAlphabetIndex={showAlphabetIndex}
               groupAlphabetically={groupAlphabetically}
             />
@@ -70,13 +66,6 @@ export default function App() {
             options={DISPLAY_MODES}
             value={displayMode}
             onChange={setDisplayMode}
-          />
-
-          <Text style={styles.sectionLabel}>flagType</Text>
-          <SegmentedRow
-            options={FLAG_TYPES}
-            value={flagType}
-            onChange={setFlagType}
           />
 
           <ToggleRow

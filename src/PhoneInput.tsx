@@ -47,18 +47,19 @@ export const PhoneInput = forwardRef<PhoneInputRef, PhoneInputProps>(
       autoFormat = true,
       showCountryPicker = true,
       displayMode = 'both',
-      flagType = 'emoji',
       renderFlag,
       renderCountryItem,
       searchPlaceholder,
       disableSearch,
       groupAlphabetically = true,
       showAlphabetIndex = true,
+      style,
       containerStyle,
       inputStyle,
       dialCodeStyle,
       flagStyle,
       countryPickerButtonStyle,
+      pickerStyles,
       theme,
       pickerPresentationStyle,
       onFocus,
@@ -160,7 +161,7 @@ export const PhoneInput = forwardRef<PhoneInputRef, PhoneInputProps>(
     const showCode = displayMode !== 'flag';
 
     return (
-      <View style={containerStyle}>
+      <View style={[style, containerStyle]}>
         <View
           style={[
             styles.container,
@@ -181,12 +182,7 @@ export const PhoneInput = forwardRef<PhoneInputRef, PhoneInputProps>(
               {renderFlag ? (
                 renderFlag(selectedCountry)
               ) : showFlag ? (
-                <Flag
-                  country={selectedCountry}
-                  type={flagType}
-                  size={20}
-                  style={flagStyle}
-                />
+                <Flag country={selectedCountry} size={20} style={flagStyle} />
               ) : null}
               {showCode && (
                 <Text
@@ -242,9 +238,9 @@ export const PhoneInput = forwardRef<PhoneInputRef, PhoneInputProps>(
             renderCountryItem={renderCountryItem}
             theme={theme}
             presentationStyle={pickerPresentationStyle}
-            flagType={flagType}
             groupAlphabetically={groupAlphabetically}
             showAlphabetIndex={showAlphabetIndex}
+            styles={pickerStyles}
           />
         )}
       </View>

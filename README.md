@@ -7,7 +7,7 @@ A customizable phone number input with a country picker and live validation, bui
 - ⌨️ Formats the number as-you-type (`AsYouType`)
 - 🔤 A–Z alphabet index on the country picker, like iOS Contacts — independent of whether the list shows section headers
 - 🎛️ Choose what the trigger shows: flag, dial code, or both
-- 🎨 Themeable via style props, or fully overridable via `renderFlag` / `renderCountryItem`
+- 🎨 Every part is stylable — quick color tokens via `theme`, or a plain RN `style`/`pickerStyles` object per element, or fully overridden via `renderFlag` / `renderCountryItem`. Standard `style` prop means style-interop tooling (NativeWind's `cssInterop`, the mechanism shadcn-style RN kits build on) can theme it too
 - 📦 Zero native dependencies, zero setup — `npm install` and go
 
 ## Installation
@@ -75,12 +75,7 @@ ref.current?.getValue(); // PhoneInputValue
 
 ### Flag rendering
 
-```tsx
-<PhoneInput flagType="emoji" /> {/* default — real flag emoji, e.g. 🇺🇸 */}
-<PhoneInput flagType="badge" /> {/* colored ISO-code chip, zero font dependency */}
-```
-
-Flag emoji depend on the device having color flag glyphs in its system font. Most iOS and Android devices do; a few Android OEM skins and some simulators fall back to a blank box. If you see that on a target device, switch to `flagType="badge"` (or supply your own art via `renderFlag`).
+Flags render as the real Unicode flag emoji (e.g. 🇺🇸) — no images, no assets, zero setup. This depends on the device having color flag glyphs in its system font, which nearly every iOS and Android device does. If you need a different look, swap in your own with `renderFlag` (see [Custom rows](#custom-rows) below).
 
 ### Country picker: alphabet index & grouping
 
@@ -95,7 +90,9 @@ Flag emoji depend on the device having color flag glyphs in its system font. Mos
 
 The index supports both tap-to-jump and drag-to-scrub, and appears automatically whenever there's more than a handful of letters to jump between. It's hidden while searching.
 
-### Theming
+### Theming and full style control
+
+`theme` covers the common cases quickly:
 
 ```tsx
 <PhoneInput
@@ -108,9 +105,34 @@ The index supports both tap-to-jump and drag-to-scrub, and appears automatically
 />
 ```
 
-Or reach for `containerStyle`, `inputStyle`, `dialCodeStyle`, `flagStyle`, `countryPickerButtonStyle` for full control.
+For anything `theme` doesn't cover, every part of the component takes a plain RN `style` object, so nothing is locked in:
 
-### Custom flags / rows
+```tsx
+<PhoneInput
+  style={{ marginTop: 12 }}              // outer wrapper (same as containerStyle)
+  inputStyle={{ fontSize: 18 }}          // the TextInput
+  dialCodeStyle={{ fontWeight: '800' }}  // the "+1" text
+  flagStyle={{ fontSize: 24 }}           // the trigger's flag
+  countryPickerButtonStyle={{ paddingRight: 12 }} // the flag+code trigger button
+  pickerStyles={{                        // every part of the modal, individually
+    container: { backgroundColor: '#111827' },
+    header: { borderBottomWidth: 1, borderBottomColor: '#1F2937' },
+    title: { color: '#F9FAFB' },
+    search: { backgroundColor: '#1F2937', color: '#F9FAFB' },
+    row: { backgroundColor: '#111827' },
+    rowSelected: { backgroundColor: '#1F2937' },
+    name: { color: '#F9FAFB' },
+    dialCode: { color: '#9CA3AF' },
+    sidebarLetter: { color: '#818CF8' },
+  }}
+/>
+```
+
+Since `style` is a standard RN prop name (not a bespoke `containerStyle`-only API), tooling that intercepts `style`/`className` — like NativeWind's `cssInterop`, the mechanism shadcn-style RN kits (e.g. `react-native-reusables`) build on — can theme this component from the consuming app without any special integration on this library's side.
+
+### Custom rows
+
+Swap out just the flag:
 
 ```tsx
 <PhoneInput renderFlag={(country) => <MyFlagIcon iso2={country.code} />} />
@@ -147,14 +169,15 @@ Or take over the entire picker row:
 | `autoFormat` | `boolean` | `true` | Format the number as you type |
 | `showCountryPicker` | `boolean` | `true` | Show/hide the country control |
 | `displayMode` | `'flag' \| 'code' \| 'both'` | `'both'` | What the trigger shows |
-| `flagType` | `'emoji' \| 'badge'` | `'emoji'` | How the flag is rendered |
 | `disableSearch` | `boolean` | `false` | Hide the search box in the picker |
 | `groupAlphabetically` | `boolean` | `true` | Group the picker into A–Z sections with letter headers |
 | `showAlphabetIndex` | `boolean` | `true` | Show the A–Z index sidebar (independent of `groupAlphabetically`) |
 | `renderFlag` | `(country) => ReactNode` | — | Custom flag renderer |
 | `renderCountryItem` | `(info) => ReactNode` | — | Custom picker row renderer |
 | `theme` | `PhoneInputTheme` | — | Color/radius/font tokens |
-| `containerStyle` / `inputStyle` / `dialCodeStyle` / `flagStyle` / `countryPickerButtonStyle` | `StyleProp` | — | Granular style overrides |
+| `style` / `containerStyle` | `StyleProp<ViewStyle>` | — | Outer wrapper (`style` is the plain RN name, for style-interop tooling) |
+| `inputStyle` / `dialCodeStyle` / `flagStyle` / `countryPickerButtonStyle` | `StyleProp` | — | Granular style overrides for the trigger row |
+| `pickerStyles` | `CountryPickerStyles` | — | Per-element style overrides for the picker modal — see [Theming and full style control](#theming-and-full-style-control) |
 
 Any other prop is forwarded to the underlying `TextInput`.
 
@@ -175,7 +198,7 @@ interface PhoneInputValue {
 - `COUNTRIES: Country[]` — the full country dataset (loaded from `src/data/countries.json`)
 - `getCountryByCode(iso2: string): Country | undefined`
 - `groupCountriesByLetter(list: Country[]): CountrySection[]` — the A–Z grouping helper the picker uses internally
-- `Flag` — the flag component standalone (`<Flag country={c} type="emoji" />`)
+- `Flag` — the flag component standalone (`<Flag country={c} />`)
 - `CountryPicker` — the picker component standalone, if you want to build your own trigger
 
 ## Compatibility
