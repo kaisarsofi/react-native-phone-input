@@ -18,6 +18,7 @@ import {
   COUNTRIES,
   getCountryByCallingCode,
   getCountryByCode,
+  getDeviceCountry,
 } from './countries';
 import { CountryPicker } from './CountryPicker';
 import { Flag } from './Flag';
@@ -50,7 +51,7 @@ function buildValue(nationalNumber: string, country: Country): PhoneInputValue {
 export const PhoneInput = forwardRef<PhoneInputRef, PhoneInputProps>(
   function PhoneInputImpl(
     {
-      defaultCountry = 'US',
+      defaultCountry,
       country: controlledCountry,
       value: controlledValue,
       onChangeText,
@@ -97,7 +98,15 @@ export const PhoneInput = forwardRef<PhoneInputRef, PhoneInputProps>(
     }, [allowedCountries, excludedCountries]);
 
     const [internalCountryCode, setInternalCountryCode] = useState<CountryCode>(
-      controlledCountry ?? defaultCountry
+      () => {
+        if (controlledCountry) return controlledCountry;
+        if (defaultCountry) return defaultCountry;
+        const device = getDeviceCountry();
+        if (device && countryList.some((c) => c.code === device.code)) {
+          return device.code;
+        }
+        return 'US';
+      }
     );
     const [internalNational, setInternalNational] = useState(
       controlledValue ?? ''

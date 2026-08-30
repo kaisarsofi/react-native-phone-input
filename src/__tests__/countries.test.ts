@@ -1,9 +1,10 @@
-import { describe, expect, it } from '@jest/globals';
+import { afterEach, describe, expect, it, jest } from '@jest/globals';
 import { getCountries, isSupportedCountry } from 'libphonenumber-js';
 import {
   COUNTRIES,
   getCountryByCallingCode,
   getCountryByCode,
+  getDeviceCountry,
   groupCountriesByLetter,
   sectionLetterFor,
 } from '../countries';
@@ -44,6 +45,28 @@ describe('countries', () => {
     expect(getCountryByCallingCode('44')?.code).toBe('GB');
     expect(getCountryByCallingCode('1')?.code).toBe('US');
     expect(getCountryByCallingCode(undefined)).toBeUndefined();
+  });
+
+  describe('getDeviceCountry', () => {
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('resolves the region from the JS engine locale', () => {
+      jest.spyOn(Intl, 'NumberFormat').mockReturnValue({
+        resolvedOptions: () => ({ locale: 'en-IN' }),
+      } as unknown as Intl.NumberFormat);
+
+      expect(getDeviceCountry()?.code).toBe('IN');
+    });
+
+    it('returns undefined when the runtime cannot resolve a locale', () => {
+      jest.spyOn(Intl, 'NumberFormat').mockImplementation(() => {
+        throw new Error('not supported');
+      });
+
+      expect(getDeviceCountry()).toBeUndefined();
+    });
   });
 
   it('groups countries into contiguous A–Z sections', () => {

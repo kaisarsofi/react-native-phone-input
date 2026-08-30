@@ -52,6 +52,20 @@ export function getCountryByCallingCode(
   return getCountryByCode(CALLING_CODE_TO_MAIN_COUNTRY[callingCode]);
 }
 
+/** Reads the device's region from the JS engine's default locale (e.g. "en-IN"
+ * -> "IN"), with no native module required. Used as the initial country when
+ * the consumer doesn't pass `defaultCountry`. Returns undefined if the
+ * runtime can't resolve a locale/region (some Hermes builds, very old engines). */
+export function getDeviceCountry(): Country | undefined {
+  try {
+    const locale = Intl.NumberFormat().resolvedOptions().locale;
+    const region = new Intl.Locale(locale).region;
+    return getCountryByCode(region);
+  } catch {
+    return undefined;
+  }
+}
+
 /** Base A–Z letter for grouping, folding accents (e.g. "Å" -> "A") so every
  * section maps onto the plain-ASCII quick-jump index. */
 const COMBINING_MARKS = /[̀-ͯ]/g;
