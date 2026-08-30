@@ -5,7 +5,7 @@ A customizable phone number input with a country picker and live validation, bui
 - 🌍 241 countries & territories, sourced from ISO 3166-1 / ITU dial codes, as plain JSON (`src/data/countries.json`)
 - ✅ Live validation & E.164 formatting via [`libphonenumber-js`](https://github.com/catamphetamine/libphonenumber-js) (pure JS, tree-shakeable)
 - ⌨️ Formats the number as-you-type (`AsYouType`)
-- 🔤 A–Z quick-jump index on the country picker, like iOS Contacts
+- 🔤 A–Z alphabet index on the country picker, like iOS Contacts — independent of whether the list shows section headers
 - 🎛️ Choose what the trigger shows: flag, dial code, or both
 - 🎨 Themeable via style props, or fully overridable via `renderFlag` / `renderCountryItem`
 - 📦 Zero native dependencies, zero setup — `npm install` and go
@@ -82,15 +82,18 @@ ref.current?.getValue(); // PhoneInputValue
 
 Flag emoji depend on the device having color flag glyphs in its system font. Most iOS and Android devices do; a few Android OEM skins and some simulators fall back to a blank box. If you see that on a target device, switch to `flagType="badge"` (or supply your own art via `renderFlag`).
 
-### Country picker: quick jump & grouping
+### Country picker: alphabet index & grouping
+
+`showAlphabetIndex` (the A–Z sidebar) and `groupAlphabetically` (letter headers in the list) are independent — either can be on without the other:
 
 ```tsx
-<PhoneInput showQuickJump={true} groupAlphabetically={true} /> {/* default */}
-<PhoneInput showQuickJump={false} />       {/* hide the A–Z sidebar */}
-<PhoneInput groupAlphabetically={false} /> {/* flat list, no section headers */}
+<PhoneInput showAlphabetIndex={true} groupAlphabetically={true} /> {/* default: both */}
+<PhoneInput showAlphabetIndex={true} groupAlphabetically={false} /> {/* index only — flat list, no headers, sidebar still jumps to the right spot */}
+<PhoneInput showAlphabetIndex={false} groupAlphabetically={true} /> {/* headers only — no sidebar */}
+<PhoneInput showAlphabetIndex={false} groupAlphabetically={false} /> {/* plain flat list */}
 ```
 
-The quick-jump index supports both tap-to-jump and drag-to-scrub, and appears automatically whenever the list is grouped alphabetically and has more than a handful of sections. It's hidden while searching.
+The index supports both tap-to-jump and drag-to-scrub, and appears automatically whenever there's more than a handful of letters to jump between. It's hidden while searching.
 
 ### Theming
 
@@ -146,8 +149,8 @@ Or take over the entire picker row:
 | `displayMode` | `'flag' \| 'code' \| 'both'` | `'both'` | What the trigger shows |
 | `flagType` | `'emoji' \| 'badge'` | `'emoji'` | How the flag is rendered |
 | `disableSearch` | `boolean` | `false` | Hide the search box in the picker |
-| `groupAlphabetically` | `boolean` | `true` | Group the picker into A–Z sections |
-| `showQuickJump` | `boolean` | `true` | Show the A–Z quick-jump sidebar |
+| `groupAlphabetically` | `boolean` | `true` | Group the picker into A–Z sections with letter headers |
+| `showAlphabetIndex` | `boolean` | `true` | Show the A–Z index sidebar (independent of `groupAlphabetically`) |
 | `renderFlag` | `(country) => ReactNode` | — | Custom flag renderer |
 | `renderCountryItem` | `(info) => ReactNode` | — | Custom picker row renderer |
 | `theme` | `PhoneInputTheme` | — | Color/radius/font tokens |
