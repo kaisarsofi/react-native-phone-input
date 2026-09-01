@@ -32,73 +32,82 @@ export default function App() {
     Keyboard.dismiss();
   };
 
+  const content = (
+    <View style={styles.flex}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.title}>react-native-phone-input</Text>
+        <Text style={styles.subtitle}>
+          Starts on your device's locale country, falling back to India if that
+          can't be resolved. Type a number and watch it format & validate live.
+          Try pasting "+491701234567" — the country switches automatically too.
+        </Text>
+
+        <View style={styles.field}>
+          <PhoneInput
+            ref={phoneRef}
+            fallbackCountry="IN"
+            autoFocus={false}
+            onChangeText={setPhone}
+            displayMode={displayMode}
+            showAlphabetIndex={showAlphabetIndex}
+            groupAlphabetically={groupAlphabetically}
+          />
+        </View>
+
+        <View style={styles.resultBox}>
+          <Row label="National number" value={phone?.nationalNumber ?? '—'} />
+          <Row label="Country" value={phone?.country ?? '—'} />
+          <Row label="Dial code" value={phone ? `+${phone.dialCode}` : '—'} />
+          <Row label="E.164" value={phone?.e164 ?? '—'} />
+          <Row
+            label="Valid"
+            value={phone ? (phone.isValid ? 'Yes' : 'No') : '—'}
+            valueColor={phone?.isValid ? '#34C759' : '#FF3B30'}
+          />
+        </View>
+
+        <Text style={styles.sectionLabel}>displayMode</Text>
+        <SegmentedRow
+          options={DISPLAY_MODES}
+          value={displayMode}
+          onChange={setDisplayMode}
+        />
+
+        <ToggleRow
+          label="showAlphabetIndex"
+          value={showAlphabetIndex}
+          onChange={setShowAlphabetIndex}
+        />
+        <ToggleRow
+          label="groupAlphabetically"
+          value={groupAlphabetically}
+          onChange={setGroupAlphabetically}
+        />
+      </ScrollView>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.flex}
       >
-        <TouchableWithoutFeedback onPress={dismiss}>
-          <View style={styles.flex}>
-            <ScrollView contentContainerStyle={styles.container}>
-              <Text style={styles.title}>react-native-phone-input</Text>
-              <Text style={styles.subtitle}>
-                Starts on your device's locale country, falling back to India if
-                that can't be resolved. Type a number and watch it format &
-                validate live. Try pasting "+491701234567" — the country
-                switches automatically too.
-              </Text>
-
-              <View style={styles.field}>
-                <PhoneInput
-                  ref={phoneRef}
-                  fallbackCountry="IN"
-                  autoFocus={false}
-                  onChangeText={setPhone}
-                  displayMode={displayMode}
-                  showAlphabetIndex={showAlphabetIndex}
-                  groupAlphabetically={groupAlphabetically}
-                />
-              </View>
-
-              <View style={styles.resultBox}>
-                <Row
-                  label="National number"
-                  value={phone?.nationalNumber ?? '—'}
-                />
-                <Row label="Country" value={phone?.country ?? '—'} />
-                <Row
-                  label="Dial code"
-                  value={phone ? `+${phone.dialCode}` : '—'}
-                />
-                <Row label="E.164" value={phone?.e164 ?? '—'} />
-                <Row
-                  label="Valid"
-                  value={phone ? (phone.isValid ? 'Yes' : 'No') : '—'}
-                  valueColor={phone?.isValid ? '#34C759' : '#FF3B30'}
-                />
-              </View>
-
-              <Text style={styles.sectionLabel}>displayMode</Text>
-              <SegmentedRow
-                options={DISPLAY_MODES}
-                value={displayMode}
-                onChange={setDisplayMode}
-              />
-
-              <ToggleRow
-                label="showAlphabetIndex"
-                value={showAlphabetIndex}
-                onChange={setShowAlphabetIndex}
-              />
-              <ToggleRow
-                label="groupAlphabetically"
-                value={groupAlphabetically}
-                onChange={setGroupAlphabetically}
-              />
-            </ScrollView>
-          </View>
-        </TouchableWithoutFeedback>
+        {Platform.OS === 'web' ? (
+          // TouchableWithoutFeedback's Pressability system suppresses the
+          // default mousedown behavior it wraps (to manage its own gesture
+          // recognition), which blocks the browser's native focus-on-click
+          // for any descendant input — wrapping the whole screen in it would
+          // break focusing the phone input entirely on web. Web already
+          // blurs on outside click via normal DOM focus behavior, so this
+          // wrapper (only needed to work around native's lack of that) isn't
+          // used there at all.
+          content
+        ) : (
+          <TouchableWithoutFeedback onPress={dismiss}>
+            {content}
+          </TouchableWithoutFeedback>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

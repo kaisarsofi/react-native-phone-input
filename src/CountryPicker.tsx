@@ -64,6 +64,7 @@ export function CountryPicker({
 }: CountryPickerProps) {
   const [query, setQuery] = useState('');
   const scrollRef = useRef<ElementRef<typeof ScrollView>>(null);
+  const sidebarRef = useRef<ElementRef<typeof View>>(null);
   const [activeLetter, setActiveLetter] = useState<string | null>(null);
   const sidebarLayout = useRef({ y: 0, height: 1 });
   const hideActiveLetterTimer = useRef<ReturnType<typeof setTimeout> | null>(
@@ -155,9 +156,9 @@ export function CountryPicker({
     scrollRef.current?.scrollTo({ y: offset, animated: false });
   };
 
-  const handleSidebarTouch = (evt: GestureResponderEvent) => {
+  const jumpFromPageY = (pageY: number) => {
     const { height } = sidebarLayout.current;
-    const y = evt.nativeEvent.pageY - sidebarLayout.current.y;
+    const y = pageY - sidebarLayout.current.y;
     const idx = Math.min(
       ALPHABET.length - 1,
       Math.max(0, Math.floor((y / height) * ALPHABET.length))
@@ -165,6 +166,37 @@ export function CountryPicker({
     const letter = ALPHABET[idx];
     if (letter) jumpToLetter(letter);
   };
+
+  const handleSidebarTouch = (evt: GestureResponderEvent) => {
+    jumpFromPageY(evt.nativeEvent.pageY);
+  };
+
+  // react-native-web doesn't synthesize touch events from mouse input, so
+  // onTouchStart/onTouchMove alone never fire for a mouse click/drag — the
+  // sidebar would be entirely inert on web without these. isMouseDown tracks
+  // whether the button is held, mirroring onTouchMove's "only while touching"
+  // behavior, since onMouseMove otherwise fires on hover too.
+  const isMouseDown = useRef(false);
+  const webMouseHandlers =
+    Platform.OS === 'web'
+      ? {
+          onMouseDown: (e: { nativeEvent: { pageY: number } }) => {
+            isMouseDown.current = true;
+            jumpFromPageY(e.nativeEvent.pageY);
+          },
+          onMouseMove: (e: { nativeEvent: { pageY: number } }) => {
+            if (isMouseDown.current) jumpFromPageY(e.nativeEvent.pageY);
+          },
+          onMouseUp: () => {
+            isMouseDown.current = false;
+            if (hideActiveLetterTimer.current) {
+              clearTimeout(hideActiveLetterTimer.current);
+              hideActiveLetterTimer.current = null;
+            }
+            setActiveLetter(null);
+          },
+        }
+      : {};
 
   const renderRow = useCallback(
     (item: Country) => {
@@ -316,15 +348,25 @@ export function CountryPicker({
 
           {showSidebar && (
             <View
+              ref={sidebarRef}
               style={styles.sidebar}
-              onLayout={(e) => {
-                sidebarLayout.current.height = e.nativeEvent.layout.height;
+              onLayout={() => {
+                // Measure the sidebar's absolute position in the same
+                // coordinate space as touch events' `pageY` (measure()'s
+                // pageY, not measureInWindow()'s window-relative y, which can
+                // differ by the status bar/safe-area inset) rather than
+                // deriving it from `pageY - locationY` on each touch — that
+                // calculation is unreliable once the touch target is a nested
+                // child (each letter below), which was causing the touch
+                // position -> letter mapping to drift, sometimes badly enough
+                // to land several letters off (e.g. tapping "M" landing on "P").
+                sidebarRef.current?.measure(
+                  (_x, _y, _w, height, _px, pageY) => {
+                    sidebarLayout.current = { y: pageY, height };
+                  }
+                );
               }}
-              onTouchStart={(e) => {
-                sidebarLayout.current.y =
-                  e.nativeEvent.pageY - e.nativeEvent.locationY;
-                handleSidebarTouch(e);
-              }}
+              onTouchStart={handleSidebarTouch}
               onTouchMove={handleSidebarTouch}
               onTouchEnd={() => {
                 if (hideActiveLetterTimer.current) {
@@ -333,14 +375,10 @@ export function CountryPicker({
                 }
                 setActiveLetter(null);
               }}
+              {...webMouseHandlers}
             >
               {ALPHABET.map((letter) => (
-                <Pressable
-                  key={letter}
-                  onPress={() => jumpToLetter(letter)}
-                  hitSlop={{ left: 8, right: 8 }}
-                  style={styles.sidebarLetterTouchable}
-                >
+                <View key={letter} style={styles.sidebarLetterTouchable}>
                   <Text
                     style={[
                       styles.sidebarLetter,
@@ -355,7 +393,7 @@ export function CountryPicker({
                   >
                     {letter}
                   </Text>
-                </Pressable>
+                </View>
               ))}
             </View>
           )}
@@ -428,7 +466,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   listContentWithJump: {
-    paddingRight: 22,
+    paddingRight: 32,
   },
   row: {
     height: ROW_HEIGHT,
@@ -473,22 +511,40 @@ const styles = StyleSheet.create({
     color: '#6B7280',
   },
   sidebar: {
+    // Inset from top/bottom (rather than padding the content box) so the
+    // measured height used by handleSidebarTouch still matches exactly what
+    // the flex:1 letters occupy — padding would leave the touch math using a
+    // taller box than the letters actually fill, reintroducing the same
+    // mismatch fixed above. The larger bottom inset keeps "Z" clear of the
+    // safe-area edge/home indicator instead of sitting flush against it.
     position: 'absolute',
-    right: 2,
-    top: 0,
-    bottom: 0,
-    width: 18,
+    // On web, a visible OS scrollbar can render on top of a sidebar pinned
+    // to the very edge (browsers reserve/overlay scrollbar width there),
+    // eating its clicks — inset it clear of that on web specifically.
+    right: Platform.OS === 'web' ? 14 : 0,
+    top: 8,
+    bottom: 28,
+    width: 28,
+    alignItems: 'stretch',
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as object) : null),
+  },
+  // Each letter gets an equal flex share of the sidebar's full height, so
+  // its rendered slice matches exactly what `handleSidebarTouch` computes
+  // (`floor((y / height) * 26)`) — with the old center-packed layout, the 26
+  // letters occupied a short block in the middle of a much taller container,
+  // so a touch position mapped from the FULL height landed on the wrong
+  // letter (sometimes several letters off) almost everywhere except near the
+  // exact center.
+  sidebarLetterTouchable: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sidebarLetterTouchable: {
-    paddingVertical: 1,
-  },
   sidebarLetter: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     color: '#007AFF',
-    lineHeight: Platform.OS === 'ios' ? 13 : 15,
+    lineHeight: Platform.OS === 'ios' ? 15 : 17,
     textAlign: 'center',
   },
   sidebarLetterDisabled: {

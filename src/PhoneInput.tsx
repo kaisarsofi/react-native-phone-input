@@ -13,7 +13,14 @@ import {
   useState,
   type ElementRef,
 } from 'react';
-import { Pressable, Text, TextInput, View, StyleSheet } from 'react-native';
+import {
+  Platform,
+  Pressable,
+  Text,
+  TextInput,
+  View,
+  StyleSheet,
+} from 'react-native';
 import {
   COUNTRIES,
   getCountryByCallingCode,
@@ -331,5 +338,10 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     paddingVertical: 10,
+    // On web, TextInput renders as a real <input>, which gets the browser's
+    // own default focus outline on top of our border-color focus styling —
+    // showing as a doubled border. This prop is a react-native-web-specific
+    // style extension (a no-op on native) that suppresses just that.
+    ...(Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : null),
   },
 });
