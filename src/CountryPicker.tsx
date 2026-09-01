@@ -156,9 +156,9 @@ export function CountryPicker({
     scrollRef.current?.scrollTo({ y: offset, animated: false });
   };
 
-  const handleSidebarTouch = (evt: GestureResponderEvent) => {
+  const jumpFromPageY = (pageY: number) => {
     const { height } = sidebarLayout.current;
-    const y = evt.nativeEvent.pageY - sidebarLayout.current.y;
+    const y = pageY - sidebarLayout.current.y;
     const idx = Math.min(
       ALPHABET.length - 1,
       Math.max(0, Math.floor((y / height) * ALPHABET.length))
@@ -166,6 +166,37 @@ export function CountryPicker({
     const letter = ALPHABET[idx];
     if (letter) jumpToLetter(letter);
   };
+
+  const handleSidebarTouch = (evt: GestureResponderEvent) => {
+    jumpFromPageY(evt.nativeEvent.pageY);
+  };
+
+  // react-native-web doesn't synthesize touch events from mouse input, so
+  // onTouchStart/onTouchMove alone never fire for a mouse click/drag — the
+  // sidebar would be entirely inert on web without these. isMouseDown tracks
+  // whether the button is held, mirroring onTouchMove's "only while touching"
+  // behavior, since onMouseMove otherwise fires on hover too.
+  const isMouseDown = useRef(false);
+  const webMouseHandlers =
+    Platform.OS === 'web'
+      ? {
+          onMouseDown: (e: { nativeEvent: { pageY: number } }) => {
+            isMouseDown.current = true;
+            jumpFromPageY(e.nativeEvent.pageY);
+          },
+          onMouseMove: (e: { nativeEvent: { pageY: number } }) => {
+            if (isMouseDown.current) jumpFromPageY(e.nativeEvent.pageY);
+          },
+          onMouseUp: () => {
+            isMouseDown.current = false;
+            if (hideActiveLetterTimer.current) {
+              clearTimeout(hideActiveLetterTimer.current);
+              hideActiveLetterTimer.current = null;
+            }
+            setActiveLetter(null);
+          },
+        }
+      : {};
 
   const renderRow = useCallback(
     (item: Country) => {
@@ -344,6 +375,7 @@ export function CountryPicker({
                 }
                 setActiveLetter(null);
               }}
+              {...webMouseHandlers}
             >
               {ALPHABET.map((letter) => (
                 <View key={letter} style={styles.sidebarLetterTouchable}>
@@ -486,11 +518,15 @@ const styles = StyleSheet.create({
     // mismatch fixed above. The larger bottom inset keeps "Z" clear of the
     // safe-area edge/home indicator instead of sitting flush against it.
     position: 'absolute',
-    right: 0,
+    // On web, a visible OS scrollbar can render on top of a sidebar pinned
+    // to the very edge (browsers reserve/overlay scrollbar width there),
+    // eating its clicks — inset it clear of that on web specifically.
+    right: Platform.OS === 'web' ? 14 : 0,
     top: 8,
     bottom: 28,
     width: 28,
     alignItems: 'stretch',
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as object) : null),
   },
   // Each letter gets an equal flex share of the sidebar's full height, so
   // its rendered slice matches exactly what `handleSidebarTouch` computes
