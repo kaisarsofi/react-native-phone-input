@@ -17,6 +17,10 @@ Works in **Expo Go**, **Expo dev builds**, **bare React Native**, and **`react-n
 If this saves you from wiring up validation and a country list by hand, a ⭐ on
 [GitHub](https://github.com/kaisarsofi/react-native-phone-input) keeps it maintained.
 
+| iOS | Android | Web |
+| --- | --- | --- |
+| ![iOS demo](docs/iOSExample.gif) | ![Android demo](docs/androidExample.gif) | ![Web demo](docs/webExample.gif) |
+
 ---
 
 ## Features
