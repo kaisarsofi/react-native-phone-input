@@ -6,6 +6,7 @@ A **React Native phone number input, country code picker, and dial code selector
 
 Works in **Expo Go**, **Expo dev builds**, **bare React Native**, and **`react-native-web`**, on both the old (Paper) and new (Fabric) architecture — because it's pure JavaScript with no native code to reconcile.
 
+![CI](https://github.com/kaisarsofi/react-native-phone-input/actions/workflows/ci.yml/badge.svg)
 ![npm version](https://img.shields.io/npm/v/@kaisarsofi/react-native-phone-input.svg?style=flat-square)
 ![npm downloads](https://img.shields.io/npm/dm/@kaisarsofi/react-native-phone-input.svg?style=flat-square)
 ![license](https://img.shields.io/npm/l/@kaisarsofi/react-native-phone-input.svg?style=flat-square)
