@@ -206,7 +206,8 @@ Or take over the entire picker row:
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `defaultCountry` | `CountryCode` | `'US'` | Initial country (uncontrolled) |
+| `defaultCountry` | `CountryCode` | — | Fixed initial country (uncontrolled). Always wins over locale detection — set this only when you don't want the device locale used |
+| `fallbackCountry` | `CountryCode` | `'US'` | Used only when `defaultCountry` is unset and the device's locale region can't be resolved. Precedence: `defaultCountry` > device locale > `fallbackCountry` |
 | `country` | `CountryCode` | — | Controlled selected country |
 | `value` | `string` | — | Controlled national number (digits only) |
 | `onChangeText` | `(value: PhoneInputValue) => void` | — | Fires on every keystroke / country change |

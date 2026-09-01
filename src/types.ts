@@ -89,8 +89,20 @@ export interface PhoneInputProps extends Omit<
   TextInputProps,
   'value' | 'onChangeText' | 'onChange' | 'style'
 > {
-  /** ISO 3166-1 alpha-2 default/initial country, e.g. "US" */
+  /**
+   * ISO 3166-1 alpha-2 initial country, e.g. "US" (uncontrolled). Set this
+   * only when you want a *fixed* initial country regardless of the device —
+   * it always wins over locale detection. Leave it unset to prefer the
+   * device's locale region instead (see {@link fallbackCountry}).
+   */
   defaultCountry?: CountryCode;
+  /**
+   * Initial country used only when `defaultCountry` is unset AND the
+   * device's locale region can't be resolved (or isn't in the current
+   * `countries`/`excludedCountries` list). Default: "US". Precedence for the
+   * initial country is: `defaultCountry` > device locale > `fallbackCountry`.
+   */
+  fallbackCountry?: CountryCode;
   /** Controlled selected country. Falls back to internal state when omitted. */
   country?: CountryCode;
   /** Controlled national number value (digits only, no dial code) */
