@@ -434,7 +434,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   listContentWithJump: {
-    paddingRight: 22,
+    paddingRight: 32,
   },
   row: {
     height: ROW_HEIGHT,
@@ -480,21 +480,29 @@ const styles = StyleSheet.create({
   },
   sidebar: {
     position: 'absolute',
-    right: 2,
+    right: 0,
     top: 0,
     bottom: 0,
-    width: 18,
+    width: 28,
+    alignItems: 'stretch',
+  },
+  // Each letter gets an equal flex share of the sidebar's full height, so
+  // its rendered slice matches exactly what `handleSidebarTouch` computes
+  // (`floor((y / height) * 26)`) — with the old center-packed layout, the 26
+  // letters occupied a short block in the middle of a much taller container,
+  // so a touch position mapped from the FULL height landed on the wrong
+  // letter (sometimes several letters off) almost everywhere except near the
+  // exact center.
+  sidebarLetterTouchable: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sidebarLetterTouchable: {
-    paddingVertical: 1,
-  },
   sidebarLetter: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     color: '#007AFF',
-    lineHeight: Platform.OS === 'ios' ? 13 : 15,
+    lineHeight: Platform.OS === 'ios' ? 15 : 17,
     textAlign: 'center',
   },
   sidebarLetterDisabled: {
