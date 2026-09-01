@@ -479,10 +479,16 @@ const styles = StyleSheet.create({
     color: '#6B7280',
   },
   sidebar: {
+    // Inset from top/bottom (rather than padding the content box) so the
+    // measured height used by handleSidebarTouch still matches exactly what
+    // the flex:1 letters occupy — padding would leave the touch math using a
+    // taller box than the letters actually fill, reintroducing the same
+    // mismatch fixed above. The larger bottom inset keeps "Z" clear of the
+    // safe-area edge/home indicator instead of sitting flush against it.
     position: 'absolute',
     right: 0,
-    top: 0,
-    bottom: 0,
+    top: 8,
+    bottom: 28,
     width: 28,
     alignItems: 'stretch',
   },
