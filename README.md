@@ -23,7 +23,7 @@ If this saves you from wiring up validation and a country list by hand, a ⭐ on
 
 - ✅ Live phone validation & E.164 formatting via [`libphonenumber-js`](https://github.com/catamphetamine/libphonenumber-js) (pure JS, tree-shakeable — the same engine behind Google's libphonenumber)
 - ⌨️ Formats the number as you type (`AsYouType`)
-- 🌍 241 countries & territories (ISO 3166-1 codes, ITU dial codes) bundled as plain JSON — no network fetch, no extra install
+- 🌍 245 countries & territories — exact parity with `libphonenumber-js`'s supported regions (ISO 3166-1 codes, ITU dial codes), bundled as plain JSON — no network fetch, no extra install
 - 🔤 A–Z alphabet index on the country picker, tap-to-jump or drag-to-scrub, like iOS Contacts
 - 🎛️ Independent picker layout controls — section headers and the index sidebar toggle separately
 - 🎨 Fully stylable — quick color tokens via `theme`, a plain RN `style` object per element via `pickerStyles`, or full takeover via `renderFlag` / `renderCountryItem`
@@ -40,6 +40,22 @@ Most phone-input libraries for React Native fall into one of two camps: bundle a
 - ✅ **Validation isn't bolted on.** Every keystroke runs through `libphonenumber-js` — the same phone-number engine Google's `libphonenumber` is built from — so `isValid` and `e164` are correct per-country, not a regex guess.
 - 🔤 **A picker that scales past 240 countries.** The alphabet index isn't a decoration — it's backed by analytically-computed row offsets (not `onLayout` measurement, which doesn't reliably fire through a `Modal`), so tapping a letter lands exactly on that section every time, on iOS, Android, and web alike.
 - 🎨 **Restyle it, don't fight it.** `pickerStyles` covers every element of the country picker individually — header, search box, row, selected row, section header, sidebar letter — so a full dark-mode or brand re-skin doesn't mean forking the component.
+
+## How it compares
+
+| Feature | This package | react-native-phone-number-input | react-native-phone-input | react-native-international-phone-number |
+| --- | --- | --- | --- | --- |
+| Expo Go | ✅ | ⚠️ pulls a native-ish flag dep | ❌ requires a dev build | ✅ |
+| Native modules | ❌ zero | ⚠️ via `react-native-country-picker-modal` | ✅ `@react-native-picker/picker` (hard dep) | ❌ zero |
+| Web (`react-native-web`) | ✅ tested | ⚠️ undocumented | ⚠️ undocumented | ⚠️ undocumented |
+| TypeScript | ✅ | ⚠️ types unmaintained since 2021 | ✅ | ✅ |
+| E.164 output | ✅ | ✅ | ✅ | ✅ |
+| A–Z alphabet index | ✅ | ❌ | ❌ | ❌ |
+| Fabric / New Architecture | ✅ (pure JS) | ? unverified | ? unverified | ? unverified |
+| Auto-detect country from pasted number | ✅ | ❌ | ❌ | ❌ (open feature request, unaddressed) |
+| Last published to npm | — | 2021-05-05 | 2026-06-02 | 2026-03-18 |
+
+<sub>Competitor data pulled from the npm registry and each project's GitHub issues; see their repos for current status.</sub>
 
 ## Usage
 
