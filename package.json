@@ -1,13 +1,18 @@
 {
   "name": "@kaisarsofi/react-native-phone-input",
   "version": "0.1.0",
-  "description": "React Native phone number input with country picker, live libphonenumber-js validation, and E.164 formatting. Zero native modules, works in Expo Go, bare React Native, and react-native-web, with full style control and NativeWind/shadcn-style theming support.",
-  "main": "./lib/module/index.js",
-  "types": "./lib/typescript/src/index.d.ts",
+  "description": "Zero-native-module phone number input for React Native, Expo, and react-native-web, with a country picker, live libphonenumber-js validation, and E.164 output.",
+  "main": "./lib/commonjs/index.js",
+  "module": "./lib/module/index.js",
+  "types": "./lib/typescript/module/src/index.d.ts",
   "exports": {
     ".": {
       "react-native-phone-input-source": "./src/index.tsx",
-      "types": "./lib/typescript/src/index.d.ts",
+      "types": "./lib/typescript/module/src/index.d.ts",
+      "require": {
+        "types": "./lib/typescript/commonjs/src/index.d.ts",
+        "default": "./lib/commonjs/index.js"
+      },
       "default": "./lib/module/index.js"
     },
     "./package.json": "./package.json"
@@ -38,47 +43,41 @@
     "typecheck": "tsc",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "test": "jest",
+    "validate": "yarn typecheck && yarn lint && yarn test",
     "release": "release-it --only-version"
   },
   "keywords": [
     "react-native",
-    "react-native-phone-input",
-    "phone-input",
-    "phone-number-input",
-    "phone-number",
-    "phone-number-validation",
-    "international-phone-input",
-    "international-phone-number",
-    "country-picker",
-    "country-code-picker",
-    "country-selector",
-    "dial-code",
-    "dial-code-picker",
-    "calling-code",
-    "isd-code",
-    "e164",
-    "libphonenumber",
-    "libphonenumber-js",
-    "phone-validation",
-    "phone-formatting",
-    "as-you-type",
-    "flag-picker",
-    "country-flags",
-    "alphabet-index",
-    "quick-scroll",
-    "index-scroller",
     "expo",
     "expo-go",
+    "expo-router",
     "react-native-web",
+    "phone-input",
+    "phone-number-input",
+    "country-picker",
+    "country-code-picker",
+    "country-code-input",
+    "dial-code-picker",
+    "calling-code",
+    "libphonenumber-js",
+    "e164",
+    "phone-validation",
+    "form-validation",
+    "as-you-type",
+    "alphabet-index",
+    "flag-picker",
+    "react-hook-form",
+    "controlled-input",
+    "form-input",
+    "typescript",
     "nativewind",
     "shadcn",
-    "typescript",
-    "ios",
-    "android",
-    "web",
-    "form-input",
+    "zero-dependencies",
+    "no-native-modules",
     "signup-form",
-    "login-form"
+    "login-form",
+    "ios",
+    "android"
   ],
   "repository": {
     "type": "git",
@@ -119,9 +118,13 @@
     "typescript": "^6.0.3"
   },
   "peerDependencies": {
-    "react": "*",
-    "react-native": "*"
+    "react": ">=18.0.0",
+    "react-native": ">=0.71.0"
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "sideEffects": false,
   "workspaces": [
     "example"
   ],
@@ -136,6 +139,7 @@
           "esm": true
         }
       ],
+      "commonjs",
       [
         "typescript",
         {
@@ -157,7 +161,7 @@
       "customExportConditions": [
         "require",
         "react-native",
-        "<%- project.sourceCondition -%>"
+        "react-native-phone-input-source"
       ]
     },
     "modulePathIgnorePatterns": [
