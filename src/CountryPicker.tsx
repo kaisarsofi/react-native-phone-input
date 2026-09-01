@@ -64,6 +64,7 @@ export function CountryPicker({
 }: CountryPickerProps) {
   const [query, setQuery] = useState('');
   const scrollRef = useRef<ElementRef<typeof ScrollView>>(null);
+  const sidebarRef = useRef<ElementRef<typeof View>>(null);
   const [activeLetter, setActiveLetter] = useState<string | null>(null);
   const sidebarLayout = useRef({ y: 0, height: 1 });
   const hideActiveLetterTimer = useRef<ReturnType<typeof setTimeout> | null>(
@@ -316,15 +317,25 @@ export function CountryPicker({
 
           {showSidebar && (
             <View
+              ref={sidebarRef}
               style={styles.sidebar}
-              onLayout={(e) => {
-                sidebarLayout.current.height = e.nativeEvent.layout.height;
+              onLayout={() => {
+                // Measure the sidebar's absolute position in the same
+                // coordinate space as touch events' `pageY` (measure()'s
+                // pageY, not measureInWindow()'s window-relative y, which can
+                // differ by the status bar/safe-area inset) rather than
+                // deriving it from `pageY - locationY` on each touch — that
+                // calculation is unreliable once the touch target is a nested
+                // child (each letter below), which was causing the touch
+                // position -> letter mapping to drift, sometimes badly enough
+                // to land several letters off (e.g. tapping "M" landing on "P").
+                sidebarRef.current?.measure(
+                  (_x, _y, _w, height, _px, pageY) => {
+                    sidebarLayout.current = { y: pageY, height };
+                  }
+                );
               }}
-              onTouchStart={(e) => {
-                sidebarLayout.current.y =
-                  e.nativeEvent.pageY - e.nativeEvent.locationY;
-                handleSidebarTouch(e);
-              }}
+              onTouchStart={handleSidebarTouch}
               onTouchMove={handleSidebarTouch}
               onTouchEnd={() => {
                 if (hideActiveLetterTimer.current) {
@@ -335,12 +346,7 @@ export function CountryPicker({
               }}
             >
               {ALPHABET.map((letter) => (
-                <Pressable
-                  key={letter}
-                  onPress={() => jumpToLetter(letter)}
-                  hitSlop={{ left: 8, right: 8 }}
-                  style={styles.sidebarLetterTouchable}
-                >
+                <View key={letter} style={styles.sidebarLetterTouchable}>
                   <Text
                     style={[
                       styles.sidebarLetter,
@@ -355,7 +361,7 @@ export function CountryPicker({
                   >
                     {letter}
                   </Text>
-                </Pressable>
+                </View>
               ))}
             </View>
           )}
