@@ -1,8 +1,4 @@
-import {
-  AsYouType,
-  isValidPhoneNumber,
-  parsePhoneNumberFromString,
-} from 'libphonenumber-js';
+import { AsYouType, parsePhoneNumberFromString } from 'libphonenumber-js';
 import type { CountryCode } from 'libphonenumber-js';
 import {
   forwardRef,
@@ -29,31 +25,9 @@ import {
 } from './countries';
 import { CountryPicker } from './CountryPicker';
 import { Flag } from './Flag';
-import type {
-  Country,
-  PhoneInputProps,
-  PhoneInputRef,
-  PhoneInputValue,
-} from './types';
-
-function buildValue(nationalNumber: string, country: Country): PhoneInputValue {
-  const digits = nationalNumber.replace(/\D/g, '');
-  const valid = digits.length > 0 && isValidPhoneNumber(digits, country.code);
-  // Derived via libphonenumber-js rather than `+${dialCode}${digits}`: some
-  // countries (the 23 NANP territories sharing "+1") store an extended dial
-  // code like "1876" for picker display, which would double-count the area
-  // code if naively concatenated.
-  const e164 = valid
-    ? (parsePhoneNumberFromString(digits, country.code)?.number ?? null)
-    : null;
-  return {
-    nationalNumber: digits,
-    country: country.code,
-    dialCode: country.dialCode,
-    e164,
-    isValid: valid,
-  };
-}
+import { usePhoneInputPalette } from './theme';
+import { buildValue, readControlledValue } from './value';
+import type { Country, PhoneInputProps, PhoneInputRef } from './types';
 
 export const PhoneInput = forwardRef<PhoneInputRef, PhoneInputProps>(
   function PhoneInputImpl(
@@ -63,6 +37,7 @@ export const PhoneInput = forwardRef<PhoneInputRef, PhoneInputProps>(
       country: controlledCountry,
       value: controlledValue,
       onChangeText,
+      onChangeInternational,
       onChangeCountry,
       countries: allowedCountries,
       excludedCountries,
@@ -84,7 +59,10 @@ export const PhoneInput = forwardRef<PhoneInputRef, PhoneInputProps>(
       flagStyle,
       countryPickerButtonStyle,
       pickerStyles,
+      pickerSafeAreaInsets,
       theme,
+      colorScheme,
+      palette: paletteOverrides,
       pickerPresentationStyle,
       onFocus,
       onBlur,
@@ -92,6 +70,22 @@ export const PhoneInput = forwardRef<PhoneInputRef, PhoneInputProps>(
     },
     ref
   ) {
+    const palette = usePhoneInputPalette(colorScheme, paletteOverrides);
+
+    // `theme` styles the field specifically and wins over the palette's
+    // neutral defaults; the picker keeps the palette untouched, so a field
+    // restyled for a colored background doesn't take the picker with it.
+    const field = {
+      background: theme?.backgroundColor ?? palette.inputBackground,
+      border: theme?.borderColor ?? palette.border,
+      borderFocused: theme?.focusedBorderColor ?? palette.accent,
+      borderError: theme?.errorBorderColor ?? palette.danger,
+      text: theme?.textColor ?? palette.text,
+      placeholder: theme?.placeholderColor ?? palette.placeholder,
+      dialCode: theme?.dialCodeColor ?? theme?.textColor ?? palette.text,
+      divider: theme?.dividerColor ?? palette.border,
+    };
+
     const countryList = useMemo(() => {
       let list = COUNTRIES;
       if (allowedCountries?.length) {
@@ -116,19 +110,34 @@ export const PhoneInput = forwardRef<PhoneInputRef, PhoneInputProps>(
         return fallbackCountry;
       }
     );
-    const [internalNational, setInternalNational] = useState(
-      controlledValue ?? ''
+    const [internalNational, setInternalNational] = useState(() =>
+      controlledValue?.startsWith('+') ? '' : (controlledValue ?? '')
     );
     const [pickerVisible, setPickerVisible] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
 
     const inputRef = useRef<ElementRef<typeof TextInput>>(null);
 
-    const countryCode = controlledCountry ?? internalCountryCode;
-    const nationalNumber = controlledValue ?? internalNational;
+    const baseCountry =
+      getCountryByCode(controlledCountry ?? internalCountryCode) ??
+      countryList[0] ??
+      COUNTRIES[0]!;
 
-    const selectedCountry =
-      getCountryByCode(countryCode) ?? countryList[0] ?? COUNTRIES[0]!;
+    // A controlled international value carries its own country, so it is read
+    // back out of the value itself rather than tracked as separate state.
+    // Memoized because this parses, and every keystroke is a render.
+    const controlled = useMemo(
+      () =>
+        controlledValue !== undefined
+          ? readControlledValue(controlledValue, baseCountry)
+          : undefined,
+      [controlledValue, baseCountry]
+    );
+
+    const selectedCountry = controlledCountry
+      ? baseCountry
+      : (controlled?.country ?? baseCountry);
+    const nationalNumber = controlled?.national ?? internalNational;
 
     const formattedNational = useMemo(() => {
       if (!autoFormat) return nationalNumber;
@@ -156,8 +165,9 @@ export const PhoneInput = forwardRef<PhoneInputRef, PhoneInputProps>(
       (digits: string, country: Country) => {
         const next = buildValue(digits, country);
         onChangeText?.(next);
+        onChangeInternational?.(next.international);
       },
-      [onChangeText]
+      [onChangeText, onChangeInternational]
     );
 
     const handleChangeText = useCallback(
@@ -207,15 +217,12 @@ export const PhoneInput = forwardRef<PhoneInputRef, PhoneInputProps>(
       [controlledCountry, emitChange, nationalNumber, onChangeCountry]
     );
 
-    const borderColor = !disableValidation
-      ? nationalNumber.length > 0 && !value.isValid
-        ? (theme?.errorBorderColor ?? '#FF3B30')
+    const borderColor =
+      !disableValidation && nationalNumber.length > 0 && !value.isValid
+        ? field.borderError
         : isFocused
-          ? (theme?.focusedBorderColor ?? '#007AFF')
-          : (theme?.borderColor ?? '#D1D1D6')
-      : isFocused
-        ? (theme?.focusedBorderColor ?? '#007AFF')
-        : (theme?.borderColor ?? '#D1D1D6');
+          ? field.borderFocused
+          : field.border;
 
     const showFlag = displayMode !== 'code';
     const showCode = displayMode !== 'flag';
@@ -228,7 +235,7 @@ export const PhoneInput = forwardRef<PhoneInputRef, PhoneInputProps>(
             {
               borderColor,
               borderRadius: theme?.borderRadius ?? 10,
-              backgroundColor: theme?.backgroundColor ?? '#FFFFFF',
+              backgroundColor: field.background,
             },
           ]}
         >
@@ -248,15 +255,20 @@ export const PhoneInput = forwardRef<PhoneInputRef, PhoneInputProps>(
                 <Text
                   style={[
                     styles.dialCode,
-                    { color: theme?.dialCodeColor ?? '#1C1C1E' },
+                    { color: field.dialCode },
                     dialCodeStyle,
                   ]}
                 >
                   +{selectedCountry.dialCode}
                 </Text>
               )}
-              <Text style={styles.chevron}>▾</Text>
             </Pressable>
+          )}
+
+          {showCountryPicker && (
+            <View
+              style={[styles.divider, { backgroundColor: field.divider }]}
+            />
           )}
 
           <TextInput
@@ -265,11 +277,11 @@ export const PhoneInput = forwardRef<PhoneInputRef, PhoneInputProps>(
             onChangeText={handleChangeText}
             keyboardType="phone-pad"
             placeholder={textInputProps.placeholder ?? 'Phone number'}
-            placeholderTextColor={theme?.placeholderColor ?? '#8E8E93'}
+            placeholderTextColor={field.placeholder}
             style={[
               styles.input,
               {
-                color: theme?.textColor ?? '#1C1C1E',
+                color: field.text,
                 fontSize: theme?.fontSize ?? 16,
               },
               inputStyle,
@@ -296,11 +308,12 @@ export const PhoneInput = forwardRef<PhoneInputRef, PhoneInputProps>(
             searchPlaceholder={searchPlaceholder}
             disableSearch={disableSearch}
             renderCountryItem={renderCountryItem}
-            theme={theme}
+            palette={palette}
             presentationStyle={pickerPresentationStyle}
             groupAlphabetically={groupAlphabetically}
             showAlphabetIndex={showAlphabetIndex}
             styles={pickerStyles}
+            safeAreaInsets={pickerSafeAreaInsets}
           />
         )}
       </View>
@@ -321,18 +334,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexShrink: 0,
     paddingRight: 8,
-    marginRight: 8,
-    borderRightWidth: StyleSheet.hairlineWidth * 2,
-    borderRightColor: '#D1D1D6',
     gap: 5,
+  },
+  // A real rule rather than a border on the country control: the control's
+  // border shares a color with the field's outer border, so a borderless
+  // field used to lose this divider along with it.
+  divider: {
+    width: StyleSheet.hairlineWidth * 2,
+    alignSelf: 'center',
+    height: 22,
+    marginRight: 8,
+    borderRadius: 1,
   },
   dialCode: {
     fontSize: 15,
     fontWeight: '500',
-  },
-  chevron: {
-    fontSize: 11,
-    color: '#8E8E93',
   },
   input: {
     flex: 1,

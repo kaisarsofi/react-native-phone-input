@@ -11,7 +11,6 @@ import {
   Modal,
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -21,15 +20,20 @@ import {
 } from 'react-native';
 import { groupCountriesByLetter, type Country } from './countries';
 import { Flag } from './Flag';
+import { useOptionalSafeAreaInsets } from './safeArea';
+import { usePhoneInputPalette, type PhoneInputPalette } from './theme';
 import type {
   CountryPickerRenderItemInfo,
   CountryPickerStyles,
-  PhoneInputTheme,
+  PhoneInputColorScheme,
 } from './types';
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 const ROW_HEIGHT = 48;
 const HEADER_HEIGHT = 28;
+/** Width reserved on the right for the A-Z index, so list content and the
+ * search box stop at the same place instead of running under it. */
+const SIDEBAR_GUTTER = 32;
 
 export interface CountryPickerProps {
   visible: boolean;
@@ -40,7 +44,23 @@ export interface CountryPickerProps {
   searchPlaceholder?: string;
   disableSearch?: boolean;
   renderCountryItem?: (info: CountryPickerRenderItemInfo) => ReactNode;
-  theme?: PhoneInputTheme;
+  /**
+   * Safe-area padding for the sheet. Usually unnecessary: when
+   * `react-native-safe-area-context` is installed (an optional peer) the
+   * insets are detected automatically, and the defaults work without it
+   * either way. Any edge set here overrides the detected value for that edge
+   * only — `{ top: 0 }` opts out of the top inset and keeps the rest.
+   */
+  safeAreaInsets?: {
+    top?: number;
+    bottom?: number;
+    left?: number;
+    right?: number;
+  };
+  /** Resolved palette. Passed down by PhoneInput; when the picker is used on
+   * its own it resolves one from `colorScheme` instead. */
+  palette?: PhoneInputPalette;
+  colorScheme?: PhoneInputColorScheme;
   presentationStyle?: 'pageSheet' | 'fullScreen' | 'formSheet';
   groupAlphabetically?: boolean;
   showAlphabetIndex?: boolean;
@@ -56,12 +76,55 @@ export function CountryPicker({
   searchPlaceholder = 'Search country or code',
   disableSearch,
   renderCountryItem,
-  theme,
+  palette: providedPalette,
+  colorScheme,
+  safeAreaInsets,
   presentationStyle,
   groupAlphabetically = true,
   showAlphabetIndex = true,
   styles: styleOverrides,
 }: CountryPickerProps) {
+  const fallbackPalette = usePhoneInputPalette(colorScheme);
+  const palette = providedPalette ?? fallbackPalette;
+
+  // An explicit prop is applied as given; auto-detected insets are adjusted,
+  // because the ambient value describes the *window*, not this sheet. Inside
+  // an iOS pageSheet/formSheet the system has already inset the top, so
+  // adding the window's top inset there would push the header down by the
+  // notch height for no reason.
+  const ambientInsets = useOptionalSafeAreaInsets();
+  const isIosSheet =
+    Platform.OS === 'ios' &&
+    (presentationStyle ?? 'pageSheet') !== 'fullScreen';
+
+  // Read edge by edge rather than depending on the prop object, which callers
+  // naturally write inline.
+  const insetTop = safeAreaInsets?.top;
+  const insetBottom = safeAreaInsets?.bottom;
+  const insetLeft = safeAreaInsets?.left;
+  const insetRight = safeAreaInsets?.right;
+
+  const insets = useMemo(() => {
+    const auto = ambientInsets
+      ? { ...ambientInsets, top: isIosSheet ? 0 : ambientInsets.top }
+      : null;
+    if (
+      insetTop === undefined &&
+      insetBottom === undefined &&
+      insetLeft === undefined &&
+      insetRight === undefined
+    ) {
+      return auto;
+    }
+    // Each edge given explicitly wins; the rest still fall back to the
+    // detected value, so `{ top: 0 }` overrides only the top.
+    return {
+      top: insetTop ?? auto?.top ?? 0,
+      bottom: insetBottom ?? auto?.bottom ?? 0,
+      left: insetLeft ?? auto?.left ?? 0,
+      right: insetRight ?? auto?.right ?? 0,
+    };
+  }, [insetTop, insetBottom, insetLeft, insetRight, ambientInsets, isIosSheet]);
   const [query, setQuery] = useState('');
   const scrollRef = useRef<ElementRef<typeof ScrollView>>(null);
   const sidebarRef = useRef<ElementRef<typeof View>>(null);
@@ -80,6 +143,12 @@ export function CountryPicker({
     []
   );
 
+  // Reset the search when the sheet closes, so reopening it starts on the
+  // full list rather than on whatever was typed last time.
+  useEffect(() => {
+    if (!visible) setQuery('');
+  }, [visible]);
+
   const showActiveLetterBriefly = (letter: string) => {
     setActiveLetter(letter);
     if (hideActiveLetterTimer.current) {
@@ -90,6 +159,48 @@ export function CountryPicker({
       hideActiveLetterTimer.current = null;
     }, 600);
   };
+
+  // Every color the picker draws lives here rather than in the StyleSheet
+  // below, which now holds layout only — the two hardcoded light values that
+  // used to sit in `row` and `search` were exactly what made dark mode
+  // unreadable (bright separator lines, a near-white search box).
+  const colors = useMemo(
+    () => ({
+      container: { backgroundColor: palette.background },
+      headerSection: {
+        backgroundColor: palette.background,
+        borderBottomColor: palette.border,
+      },
+      searchContainer: {
+        backgroundColor: palette.surface,
+        borderColor: palette.border,
+      },
+      search: { color: palette.text },
+      searchIcon: { borderColor: palette.placeholder },
+      searchIconFill: { backgroundColor: palette.placeholder },
+      handle: { backgroundColor: palette.handle },
+      title: { color: palette.text },
+      closeButton: { backgroundColor: palette.surface },
+      closeButtonPressed: { backgroundColor: palette.surfacePressed },
+      closeButtonText: { color: palette.textMuted },
+      rowSeparator: { borderBottomColor: palette.border },
+      rowSelected: { backgroundColor: palette.surface },
+      name: { color: palette.text },
+      dialCode: { color: palette.textMuted },
+      empty: { color: palette.textMuted },
+      sectionHeader: { backgroundColor: palette.background },
+      sectionHeaderText: { color: palette.textMuted },
+      sidebarLetter: { color: palette.accent },
+      sidebarLetterDisabled: { color: palette.disabled },
+      sidebarLetterActive: {
+        color: palette.accentContrast,
+        backgroundColor: palette.accent,
+      },
+      bubble: { backgroundColor: palette.bubble },
+      bubbleText: { color: palette.bubbleText },
+    }),
+    [palette]
+  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -108,16 +219,26 @@ export function CountryPicker({
   // alphabet index has something to jump to even when section headers
   // (groupAlphabetically) are turned off — the two are independent: headers
   // control what's visible in the list, the index controls the sidebar.
+  // `filtered` is the `countries` array itself whenever the query is empty,
+  // so the unsearched sections and the sidebar's letters are the same grouping
+  // — computed once here instead of twice.
+  const allSections = useMemo(
+    () => groupCountriesByLetter(countries),
+    [countries]
+  );
+
   const sections = useMemo(
-    () =>
-      isSearching
-        ? [{ letter: '', data: filtered }]
-        : groupCountriesByLetter(filtered),
-    [filtered, isSearching]
+    () => (isSearching ? [{ letter: '', data: filtered }] : allSections),
+    [filtered, isSearching, allSections]
   );
 
   const showHeaders = groupAlphabetically && !isSearching;
-  const showSidebar = showAlphabetIndex && !isSearching && sections.length > 3;
+
+  // Whether the A-Z gutter is reserved is deliberately independent of the
+  // query: the sidebar itself hides while searching, but the space stays
+  // claimed so the search box and the list don't jump wider mid-keystroke.
+  const reservesSidebar = showAlphabetIndex && allSections.length > 3;
+  const showSidebar = reservesSidebar && !isSearching;
 
   const availableLetters = useMemo(
     () => new Set(sections.map((s) => s.letter)),
@@ -211,27 +332,45 @@ export function CountryPicker({
           style={({ pressed }) => [
             styles.row,
             styleOverrides?.row,
-            isSelected && [styles.rowSelected, styleOverrides?.rowSelected],
+            isSelected && [
+              styles.rowSelected,
+              colors.rowSelected,
+              styleOverrides?.rowSelected,
+            ],
             pressed && styles.rowPressed,
           ]}
           accessibilityRole="button"
           accessibilityLabel={`${item.name}, +${item.dialCode}`}
         >
-          <Flag
-            country={item}
-            size={22}
-            style={[styles.flag, styleOverrides?.flag]}
-          />
-          <Text style={[styles.name, styleOverrides?.name]} numberOfLines={1}>
-            {item.name}
-          </Text>
-          <Text style={[styles.dialCode, styleOverrides?.dialCode]}>
-            +{item.dialCode}
-          </Text>
+          {/* The separator lives on this inner view, which starts where the
+              flag does, so it is inset from the screen edge the way a native
+              list is rather than running the full width under the padding. */}
+          <View style={[styles.rowInner, colors.rowSeparator]}>
+            <Flag
+              country={item}
+              size={22}
+              style={[styles.flag, styleOverrides?.flag]}
+            />
+            <Text
+              style={[styles.name, colors.name, styleOverrides?.name]}
+              numberOfLines={1}
+            >
+              {item.name}
+            </Text>
+            <Text
+              style={[
+                styles.dialCode,
+                colors.dialCode,
+                styleOverrides?.dialCode,
+              ]}
+            >
+              +{item.dialCode}
+            </Text>
+          </View>
         </Pressable>
       );
     },
-    [selected, onSelect, renderCountryItem, styleOverrides]
+    [selected, onSelect, renderCountryItem, styleOverrides, colors]
   );
 
   // Memoized separately from the rest of the tree so sidebar drag-scrubbing
@@ -242,17 +381,22 @@ export function CountryPicker({
     () => (
       <>
         {filtered.length === 0 && (
-          <Text style={styles.empty}>No countries found</Text>
+          <Text style={[styles.empty, colors.empty]}>No countries found</Text>
         )}
         {sections.map((section) => (
           <View key={section.letter || 'all'}>
             {showHeaders && section.letter ? (
               <View
-                style={[styles.sectionHeader, styleOverrides?.sectionHeader]}
+                style={[
+                  styles.sectionHeader,
+                  colors.sectionHeader,
+                  styleOverrides?.sectionHeader,
+                ]}
               >
                 <Text
                   style={[
                     styles.sectionHeaderText,
+                    colors.sectionHeaderText,
                     styleOverrides?.sectionHeaderText,
                   ]}
                 >
@@ -267,7 +411,7 @@ export function CountryPicker({
         ))}
       </>
     ),
-    [filtered.length, sections, showHeaders, styleOverrides, renderRow]
+    [filtered.length, sections, showHeaders, styleOverrides, renderRow, colors]
   );
 
   return (
@@ -279,68 +423,107 @@ export function CountryPicker({
         Platform.OS === 'ios' ? (presentationStyle ?? 'pageSheet') : undefined
       }
     >
-      <SafeAreaView
+      <View
         style={[
           styles.container,
-          theme?.backgroundColor
-            ? { backgroundColor: theme.backgroundColor }
+          colors.container,
+          insets
+            ? {
+                paddingTop: insets.top,
+                paddingBottom: insets.bottom,
+                paddingLeft: insets.left,
+                paddingRight: insets.right,
+              }
             : null,
           styleOverrides?.container,
         ]}
       >
-        {Platform.OS === 'ios' &&
-          (presentationStyle ?? 'pageSheet') === 'pageSheet' && (
-            <View style={styles.dragHandleWrap}>
-              <View style={styles.dragHandle} />
+        <View
+          style={[
+            styles.headerSection,
+            colors.headerSection,
+            styleOverrides?.headerSection,
+          ]}
+        >
+          {Platform.OS === 'ios' &&
+            (presentationStyle ?? 'pageSheet') === 'pageSheet' && (
+              <View style={styles.dragHandleWrap}>
+                <View style={[styles.dragHandle, colors.handle]} />
+              </View>
+            )}
+
+          <View style={[styles.header, styleOverrides?.header]}>
+            <Text style={[styles.title, colors.title, styleOverrides?.title]}>
+              Select a country
+            </Text>
+            <Pressable
+              onPress={onClose}
+              hitSlop={8}
+              style={({ pressed }) => [
+                styles.closeButton,
+                colors.closeButton,
+                styleOverrides?.closeButton,
+                pressed && colors.closeButtonPressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+            >
+              <Text
+                style={[
+                  styles.closeButtonText,
+                  colors.closeButtonText,
+                  styleOverrides?.closeButtonText,
+                ]}
+              >
+                ✕
+              </Text>
+            </Pressable>
+          </View>
+
+          {!disableSearch && (
+            <View
+              style={[
+                styles.searchContainer,
+                reservesSidebar ? styles.searchWithJump : null,
+                colors.searchContainer,
+                styleOverrides?.searchContainer,
+              ]}
+            >
+              {/* Magnifier drawn from two views — no icon font, no asset, and
+                  it takes its color from the palette like everything else. */}
+              <View style={styles.searchIcon}>
+                <View style={[styles.searchIconLens, colors.searchIcon]} />
+                <View
+                  style={[styles.searchIconHandle, colors.searchIconFill]}
+                />
+              </View>
+              <TextInput
+                value={query}
+                onChangeText={setQuery}
+                placeholder={searchPlaceholder}
+                placeholderTextColor={palette.placeholder}
+                style={[styles.search, colors.search, styleOverrides?.search]}
+                autoCorrect={false}
+                autoCapitalize="none"
+                clearButtonMode="while-editing"
+              />
             </View>
           )}
-
-        <View style={[styles.header, styleOverrides?.header]}>
-          <Text style={[styles.title, styleOverrides?.title]}>
-            Select a country
-          </Text>
-          <Pressable
-            onPress={onClose}
-            hitSlop={8}
-            style={({ pressed }) => [
-              styles.closeButton,
-              styleOverrides?.closeButton,
-              pressed && styles.closeButtonPressed,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Close"
-          >
-            <Text
-              style={[styles.closeButtonText, styleOverrides?.closeButtonText]}
-            >
-              ✕
-            </Text>
-          </Pressable>
         </View>
-
-        {!disableSearch && (
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder={searchPlaceholder}
-            placeholderTextColor={theme?.placeholderColor ?? '#8E8E93'}
-            style={[
-              styles.search,
-              theme?.textColor ? { color: theme.textColor } : null,
-              styleOverrides?.search,
-            ]}
-            autoCorrect={false}
-            autoCapitalize="none"
-            clearButtonMode="while-editing"
-          />
-        )}
 
         <View style={styles.body}>
           <ScrollView
             ref={scrollRef}
             keyboardShouldPersistTaps="handled"
+            // Fallback for when no insets are available: UIKit adds the bottom
+            // inset itself, since the scroll view's frame overlaps the home
+            // indicator but not the notch. Turned off once we pad the
+            // container ourselves, so the two don't stack.
+            contentInsetAdjustmentBehavior={
+              insets?.bottom ? 'never' : 'automatic'
+            }
             contentContainerStyle={
-              showSidebar ? styles.listContentWithJump : undefined
+              reservesSidebar ? styles.listContentWithJump : undefined
             }
           >
             {listContent}
@@ -382,11 +565,13 @@ export function CountryPicker({
                   <Text
                     style={[
                       styles.sidebarLetter,
+                      colors.sidebarLetter,
                       styleOverrides?.sidebarLetter,
                       !availableLetters.has(letter) &&
-                        styles.sidebarLetterDisabled,
+                        colors.sidebarLetterDisabled,
                       activeLetter === letter && [
                         styles.sidebarLetterActive,
+                        colors.sidebarLetterActive,
                         styleOverrides?.sidebarLetterActive,
                       ],
                     ]}
@@ -399,12 +584,14 @@ export function CountryPicker({
           )}
 
           {activeLetter && (
-            <View style={styles.bubble} pointerEvents="none">
-              <Text style={styles.bubbleText}>{activeLetter}</Text>
+            <View style={[styles.bubble, colors.bubble]} pointerEvents="none">
+              <Text style={[styles.bubbleText, colors.bubbleText]}>
+                {activeLetter}
+              </Text>
             </View>
           )}
         </View>
-      </SafeAreaView>
+      </View>
     </Modal>
   );
 }
@@ -412,7 +599,6 @@ export function CountryPicker({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   dragHandleWrap: {
     alignItems: 'center',
@@ -422,7 +608,24 @@ const styles = StyleSheet.create({
     width: 36,
     height: 5,
     borderRadius: 3,
-    backgroundColor: '#D1D1D6',
+  },
+  // Title + search read as one block, ruled off from the list, instead of the
+  // search floating loose above the first section band.
+  headerSection: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    // Sits above the list so the shadow falls over the rows scrolling beneath
+    // it, which separates the two far better than a line on its own.
+    zIndex: 1,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 3 },
+      },
+      android: { elevation: 3 },
+      default: {},
+    }),
   },
   header: {
     flexDirection: 'row',
@@ -442,44 +645,81 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F2F2F7',
-  },
-  closeButtonPressed: {
-    backgroundColor: '#E5E5EA',
   },
   closeButtonText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#8E8E93',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginLeft: 20,
+    marginRight: 20,
+    marginBottom: 14,
+    paddingHorizontal: 12,
+    height: 48,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  searchIcon: {
+    width: 15,
+    height: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchIconLens: {
+    width: 11,
+    height: 11,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+  },
+  searchIconHandle: {
+    position: 'absolute',
+    width: 1.5,
+    height: 6,
+    borderRadius: 1,
+    right: 1,
+    bottom: 0,
+    transform: [{ rotate: '-45deg' }],
   },
   search: {
-    marginHorizontal: 20,
-    marginBottom: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: '#F2F2F7',
+    flex: 1,
+    minWidth: 0,
+    paddingVertical: 0,
     fontSize: 16,
+    ...(Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : null),
+    ...(Platform.OS === 'android'
+      ? { textAlignVertical: 'center' as const, includeFontPadding: false }
+      : null),
+  },
+  searchWithJump: {
+    marginRight: 20 + SIDEBAR_GUTTER,
   },
   body: {
     flex: 1,
     flexDirection: 'row',
   },
   listContentWithJump: {
-    paddingRight: 32,
+    paddingRight: SIDEBAR_GUTTER,
   },
   row: {
     height: ROW_HEIGHT,
     flexDirection: 'row',
+    paddingLeft: 20,
+  },
+  rowInner: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingRight: 20,
     gap: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E5EA',
   },
-  rowSelected: {
-    backgroundColor: '#F2F2F7',
-  },
+  rowSelected: {},
   rowPressed: {
     opacity: 0.6,
   },
@@ -492,23 +732,21 @@ const styles = StyleSheet.create({
   },
   dialCode: {
     fontSize: 16,
-    color: '#8E8E93',
   },
   empty: {
     textAlign: 'center',
     marginTop: 32,
-    color: '#8E8E93',
   },
   sectionHeader: {
     height: HEADER_HEIGHT,
-    justifyContent: 'center',
-    backgroundColor: '#F2F2F7',
+    justifyContent: 'flex-end',
     paddingHorizontal: 20,
+    paddingBottom: 4,
   },
   sectionHeaderText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
-    color: '#6B7280',
+    letterSpacing: 0.6,
   },
   sidebar: {
     // Inset from top/bottom (rather than padding the content box) so the
@@ -543,16 +781,10 @@ const styles = StyleSheet.create({
   sidebarLetter: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#007AFF',
     lineHeight: Platform.OS === 'ios' ? 15 : 17,
     textAlign: 'center',
   },
-  sidebarLetterDisabled: {
-    color: '#C7C7CC',
-  },
   sidebarLetterActive: {
-    color: '#FFFFFF',
-    backgroundColor: '#007AFF',
     borderRadius: 6,
     overflow: 'hidden',
   },
@@ -563,12 +795,10 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: 'rgba(60,60,67,0.85)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   bubbleText: {
-    color: '#FFFFFF',
     fontSize: 28,
     fontWeight: '700',
   },

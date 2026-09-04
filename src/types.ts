@@ -6,8 +6,10 @@ import type {
   ViewStyle,
 } from 'react-native';
 import type { Country } from './countries';
+import type { PhoneInputColorScheme, PhoneInputPalette } from './theme';
 
 export type { Country };
+export type { PhoneInputColorScheme, PhoneInputPalette };
 
 export interface PhoneInputValue {
   /** Raw digits the user typed, national significant number, no dial code (e.g. "4155552671") */
@@ -23,6 +25,15 @@ export interface PhoneInputValue {
   dialCode: string;
   /** Full E.164 formatted number if valid, e.g. "+14155552671" */
   e164: string | null;
+  /**
+   * The number as an international string at every keystroke, valid or not
+   * (e.g. "+1415555" while typing). Equals `e164` once the number is valid,
+   * and "" while the field is empty. Built through libphonenumber-js, so
+   * unlike `dialCode` + `nationalNumber` it is always correct for the NANP
+   * territories that share "+1" — use this, not string concatenation, when
+   * you need a value to store on every change.
+   */
+  international: string;
   /** Whether libphonenumber-js considers the number valid for the selected country */
   isValid: boolean;
 }
@@ -48,6 +59,10 @@ export interface PhoneInputTheme {
   textColor?: string;
   placeholderColor?: string;
   dialCodeColor?: string;
+  /** The rule between the country control and the number. Defaults to the
+   * palette's border color — set it explicitly when the field itself is
+   * borderless, so the divider does not disappear with the border. */
+  dividerColor?: string;
   borderRadius?: number;
   fontSize?: number;
 }
@@ -61,13 +76,18 @@ export type CountryDisplayMode = 'flag' | 'code' | 'both';
  * top of the built-in style, so you only need to specify what you're changing.
  */
 export interface CountryPickerStyles {
-  /** The modal's root SafeAreaView */
+  /** The modal's root view */
   container?: StyleProp<ViewStyle>;
+  /** The block holding the title row and search box, ruled off from the list */
+  headerSection?: StyleProp<ViewStyle>;
   /** Row containing the title and close button */
   header?: StyleProp<ViewStyle>;
   title?: StyleProp<TextStyle>;
   closeButton?: StyleProp<ViewStyle>;
   closeButtonText?: StyleProp<TextStyle>;
+  /** The search field's box — fill, border, height */
+  searchContainer?: StyleProp<ViewStyle>;
+  /** The search field's text input */
   search?: StyleProp<TextStyle>;
   /** A single country row */
   row?: StyleProp<ViewStyle>;
@@ -105,10 +125,25 @@ export interface PhoneInputProps extends Omit<
   fallbackCountry?: CountryCode;
   /** Controlled selected country. Falls back to internal state when omitted. */
   country?: CountryCode;
-  /** Controlled national number value (digits only, no dial code) */
+  /**
+   * Controlled value. Accepts either the national number on its own (digits,
+   * no dial code — e.g. "4155552671") or a full international number starting
+   * with "+" (e.g. "+14155552671"), in which case the selected country is
+   * derived from it. The international form lets a form store one string and
+   * hand it straight back, with no country state of its own; it is also what
+   * {@link onChangeInternational} emits. The selected country only changes
+   * when the calling code does, so picking a specific "+1" territory is not
+   * undone by the next keystroke.
+   */
   value?: string;
   /** Called with the composed value on every change */
   onChangeText?: (value: PhoneInputValue) => void;
+  /**
+   * Called on every change with {@link PhoneInputValue.international} alone.
+   * Pairs with the international form of `value` so a form field can be wired
+   * up with just `value` and this callback.
+   */
+  onChangeInternational?: (value: string) => void;
   /** Called only when the selected country changes */
   onChangeCountry?: (country: Country) => void;
   /** Restrict the picker to a subset of ISO codes */
@@ -164,7 +199,31 @@ export interface PhoneInputProps extends Omit<
 
   /** Visual theme tokens, merged under the style props above */
   theme?: PhoneInputTheme;
+  /**
+   * Which palette to draw with. Defaults to "system", which follows the OS
+   * appearance — dark mode needs no setup.
+   */
+  colorScheme?: PhoneInputColorScheme;
+  /**
+   * Override individual palette tokens (separators, surfaces, muted text, the
+   * A-Z index, ...) on top of the resolved light/dark palette. This is the
+   * one knob for recoloring the whole component, picker included.
+   */
+  palette?: Partial<PhoneInputPalette>;
 
+  /**
+   * Safe-area padding for the picker sheet. Usually unnecessary — when
+   * `react-native-safe-area-context` is installed (an optional peer) the
+   * insets are detected automatically, and the defaults work without it
+   * either way. Any edge set here overrides the detected value for that edge
+   * only, so `{ top: 0 }` opts out of the top inset and keeps the rest.
+   */
+  pickerSafeAreaInsets?: {
+    top?: number;
+    bottom?: number;
+    left?: number;
+    right?: number;
+  };
   /** Modal presentation style for the built-in picker (default: "pageSheet" on iOS, "fullScreen" elsewhere) */
   pickerPresentationStyle?: 'pageSheet' | 'fullScreen' | 'formSheet';
 }
