@@ -1,6 +1,6 @@
 {
   "name": "@kaisarsofi/react-native-phone-input",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Zero-native-module phone number input for React Native, Expo, and react-native-web, with a country picker, live libphonenumber-js validation, and E.164 output.",
   "main": "./lib/commonjs/index.js",
   "module": "./lib/module/index.js",
