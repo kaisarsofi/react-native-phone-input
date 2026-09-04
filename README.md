@@ -80,7 +80,33 @@ export default function App() {
 }
 ```
 
-### Controlled
+### Controlled: one string, no country state
+
+Hold the international number and hand it straight back. The country is read
+out of the value, so there is nothing else to track — this is all a form field
+needs:
+
+```tsx
+const [phone, setPhone] = useState(''); // "+919876543210"
+
+<PhoneInput value={phone} onChangeInternational={setPhone} />
+```
+
+The same shape drops into react-hook-form:
+
+```tsx
+<Controller
+  control={control}
+  name="phoneNumber"
+  render={({ field: { value, onChange, onBlur } }) => (
+    <PhoneInput value={value} onChangeInternational={onChange} onBlur={onBlur} />
+  )}
+/>
+```
+
+### Controlled: country and number separately
+
+When you do want the two apart:
 
 ```tsx
 const [country, setCountry] = useState<CountryCode>('GB');
@@ -159,9 +185,59 @@ Flags render as the real Unicode flag emoji (e.g. 🇺🇸) — no images, no as
 
 The index supports both tap-to-jump and drag-to-scrub, and appears automatically whenever there's more than a handful of letters to jump between. It's hidden while searching.
 
+### Dark mode
+
+Both palettes ship complete, and the component follows the OS appearance by
+default — the input and the picker sheet included. Nothing to wire up:
+
+```tsx
+<PhoneInput /> // light or dark, whichever the device is in
+```
+
+Force one, or follow your own app's theme toggle:
+
+```tsx
+<PhoneInput colorScheme={isDark ? 'dark' : 'light'} />
+```
+
+To match a design system, override only the tokens you care about — the rest
+still track the appearance. `palette` covers the input's neutral defaults and
+the whole picker sheet; use `theme` when you want to restyle only the field:
+
+```tsx
+<PhoneInput
+  palette={{ accent: '#6366F1', border: '#3F3F46' }}
+/>
+```
+
+The full token set is `PhoneInputPalette`; `LIGHT_PALETTE` and `DARK_PALETTE`
+are exported if you want to read the defaults or build one from them.
+
+```ts
+interface PhoneInputPalette {
+  background: string;       // picker page
+  inputBackground: string;  // the text field's fill
+  surface: string;          // search box, section headers, close button, selected row
+  surfacePressed: string;
+  border: string;           // separators, input border, country divider
+  text: string;
+  textMuted: string;        // dial codes, section letters, empty state
+  placeholder: string;
+  accent: string;           // focus ring, A–Z index
+  accentContrast: string;
+  danger: string;           // invalid-number border
+  disabled: string;         // A–Z letter with no countries
+  handle: string;           // sheet drag handle
+  bubble: string;           // letter bubble while scrubbing the index
+  bubbleText: string;
+}
+```
+
 ### Theming and full style control
 
-`theme` covers the common cases quickly:
+`theme` styles the **text field** — its fill, borders and text — and wins over
+the palette's defaults for those. The picker sheet is left to `palette`, so a
+field restyled for a colored background doesn't drag the picker with it:
 
 ```tsx
 <PhoneInput
@@ -199,6 +275,44 @@ For anything `theme` doesn't cover, every part of the component takes a plain RN
 
 Since `style` is a standard RN prop name (not a bespoke `containerStyle`-only API), tooling that intercepts `style`/`className` — like NativeWind's `cssInterop`, the mechanism shadcn-style RN kits (e.g. `react-native-reusables`) build on — can theme this component from the consuming app without any special integration on this library's side.
 
+### Safe areas
+
+The picker draws into a plain `View`, not React Native's `SafeAreaView` — that
+component is deprecated in favor of `react-native-safe-area-context`, which is
+a native module and would cost this library its zero-native-dependency
+guarantee as a hard dependency. So it is an **optional peer** instead:
+
+- **If your app already has it** (every Expo app, and anything using React
+  Navigation), the insets are picked up automatically. Nothing to configure.
+- **If it isn't installed**, nothing is required and nothing breaks — the
+  import is guarded, which Metro registers as an optional dependency rather
+  than a missing one.
+
+It is read through `SafeAreaInsetsContext`, not `useSafeAreaInsets()`, since
+that hook throws when no `SafeAreaProvider` is mounted above it — apps carrying
+the package transitively without a provider fall back cleanly instead.
+
+The defaults are built to be right without any of that:
+
+- On iOS the picker presents as a `pageSheet`, which the system already insets
+  at the top.
+- The list uses `contentInsetAdjustmentBehavior="automatic"`, so UIKit clears
+  the home indicator at the bottom on its own.
+- On Android `SafeAreaView` was never more than a plain `View` anyway — it is
+  iOS-only in React Native.
+
+Detected insets are adjusted for the presentation: inside an iOS
+`pageSheet`/`formSheet` the top inset is dropped, because the ambient value
+describes the window and the system has already inset the sheet.
+
+To override, pass `pickerSafeAreaInsets`. Each edge you set wins for that edge
+only, so you can opt out of one without losing the others:
+
+```tsx
+<PhoneInput pickerSafeAreaInsets={{ top: 0 }} />           // keep bottom, drop top
+<PhoneInput pickerSafeAreaInsets={{ top: 44, bottom: 34 }} /> // exact values
+```
+
 ### Custom rows
 
 Swap out just the flag:
@@ -230,8 +344,9 @@ Or take over the entire picker row:
 | `defaultCountry` | `CountryCode` | — | Fixed initial country (uncontrolled). Always wins over locale detection — set this only when you don't want the device locale used |
 | `fallbackCountry` | `CountryCode` | `'US'` | Used only when `defaultCountry` is unset and the device's locale region can't be resolved. Precedence: `defaultCountry` > device locale > `fallbackCountry` |
 | `country` | `CountryCode` | — | Controlled selected country |
-| `value` | `string` | — | Controlled national number (digits only) |
+| `value` | `string` | — | Controlled value: either the national number (digits only) or a full international number starting with `+`, in which case the country is derived from it |
 | `onChangeText` | `(value: PhoneInputValue) => void` | — | Fires on every keystroke / country change |
+| `onChangeInternational` | `(value: string) => void` | — | Same trigger as `onChangeText`, but receives `value.international` alone — pairs with the international form of `value` to wire up a form field with no country state of your own |
 | `onChangeCountry` | `(country: Country) => void` | — | Fires only when the country changes |
 | `countries` | `CountryCode[]` | all | Allow-list for the picker |
 | `excludedCountries` | `CountryCode[]` | — | Deny-list for the picker |
@@ -245,11 +360,14 @@ Or take over the entire picker row:
 | `autoDetectCountry` | `boolean` | `true` | Typing/pasting a number starting with `+` auto-switches the selected country to match its calling code (e.g. pasting `+911234567890` selects India) |
 | `renderFlag` | `(country) => ReactNode` | — | Custom flag renderer |
 | `renderCountryItem` | `(info) => ReactNode` | — | Custom picker row renderer |
-| `theme` | `PhoneInputTheme` | — | Color/radius/font tokens |
+| `theme` | `PhoneInputTheme` | — | Color/radius/font tokens for the **text field** (fill, borders, text, `dividerColor`) |
+| `colorScheme` | `'light' \| 'dark' \| 'system'` | `'system'` | Which palette to draw with. The default follows the OS, so dark mode needs no setup |
+| `palette` | `Partial<PhoneInputPalette>` | — | Override individual palette tokens (separators, surfaces, muted text, the A–Z index…) on top of the resolved light/dark palette — one knob that recolors the input and the picker together |
 | `style` / `containerStyle` | `StyleProp<ViewStyle>` | — | Outer wrapper (`style` is the plain RN name, for style-interop tooling) |
 | `inputStyle` / `dialCodeStyle` / `flagStyle` / `countryPickerButtonStyle` | `StyleProp` | — | Granular style overrides for the trigger row |
 | `pickerStyles` | `CountryPickerStyles` | — | Per-element style overrides for the picker modal — see [Theming and full style control](#theming-and-full-style-control) |
 | `searchPlaceholder` | `string` | `'Search country or code'` | Picker search box placeholder |
+| `pickerSafeAreaInsets` | `{ top?, bottom?, left?, right? }` | — | Safe-area padding for the picker sheet — see [Safe areas](#safe-areas) |
 | `pickerPresentationStyle` | `'pageSheet' \| 'fullScreen' \| 'formSheet'` | `'pageSheet'` (iOS) | Modal presentation style |
 
 Any other prop (`placeholder`, `autoFocus`, `onFocus`, `onBlur`, …) is forwarded to the underlying `TextInput`.
@@ -262,9 +380,12 @@ interface PhoneInputValue {
   country: CountryCode;     // "US"
   dialCode: string;         // "1"
   e164: string | null;      // "+14155552671" or null if invalid
+  international: string;    // "+1415555" while typing, === e164 once valid, "" when empty
   isValid: boolean;
 }
 ```
+
+`international` is the one to store on every change. Unlike `` `+${dialCode}${nationalNumber}` `` it is built through libphonenumber-js, so it stays correct for the 23 NANP territories whose `dialCode` carries a distinguishing area code (Jamaica's is `1876`, but its numbers are `+1876…`, not `+18761876…`).
 
 ### `PhoneInputRef`
 
@@ -284,11 +405,13 @@ Every named slot is optional and merges on top of the built-in style:
 ```ts
 interface CountryPickerStyles {
   container?: StyleProp<ViewStyle>;
+  headerSection?: StyleProp<ViewStyle>; // raised title + search block above the list
   header?: StyleProp<ViewStyle>;
   title?: StyleProp<TextStyle>;
   closeButton?: StyleProp<ViewStyle>;
   closeButtonText?: StyleProp<TextStyle>;
-  search?: StyleProp<TextStyle>;
+  searchContainer?: StyleProp<ViewStyle>; // the search field's box
+  search?: StyleProp<TextStyle>;          // the search field's text input
   row?: StyleProp<ViewStyle>;
   rowSelected?: StyleProp<ViewStyle>;
   flag?: StyleProp<TextStyle>;
@@ -303,6 +426,8 @@ interface CountryPickerStyles {
 
 ### Also exported
 
+- `LIGHT_PALETTE` / `DARK_PALETTE: PhoneInputPalette` — the built-in palettes
+- `usePhoneInputPalette(colorScheme?, overrides?, theme?)` — the hook the components use to resolve a palette
 - `COUNTRIES: Country[]` — the full country dataset (loaded from `src/data/countries.json`)
 - `getCountryByCode(iso2: string): Country | undefined`
 - `groupCountriesByLetter(list: Country[]): CountrySection[]` — the A–Z grouping helper the picker uses internally
