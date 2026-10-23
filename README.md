@@ -32,6 +32,7 @@ If this saves you from wiring up validation and a country list by hand, a ⭐ on
 - 🔤 A–Z alphabet index on the country picker, tap-to-jump or drag-to-scrub, like iOS Contacts
 - 🎛️ Independent picker layout controls — section headers and the index sidebar toggle separately
 - 🎨 Fully stylable — quick color tokens via `theme`, a plain RN `style` object per element via `pickerStyles`, or full takeover via `renderFlag` / `renderCountryItem`
+- 🪝 Headless `usePhoneInput` hook — the same validation, formatting, and country logic with no UI attached, for a fully custom input/picker
 - 🧩 NativeWind/shadcn-style-kit compatible — standard `style` prop means `cssInterop` can theme it from your app, no special integration needed
 - 📘 Full TypeScript support
 - 🏗️ Paper and Fabric/New Architecture support
@@ -58,6 +59,7 @@ Most phone-input libraries for React Native fall into one of two camps: bundle a
 | A–Z alphabet index | ✅ | ❌ | ❌ | ❌ |
 | Fabric / New Architecture | ✅ (pure JS) | ? unverified | ? unverified | ? unverified |
 | Auto-detect country from pasted number | ✅ | ❌ | ❌ | ❌ (open feature request, unaddressed) |
+| Headless hook for a fully custom UI | ✅ `usePhoneInput` | ❌ | ❌ | ✅ |
 | Last published to npm | — | 2021-05-05 | 2026-06-02 | 2026-03-18 |
 
 <sub>Competitor data pulled from the npm registry and each project's GitHub issues; see their repos for current status.</sub>
@@ -335,6 +337,39 @@ Or take over the entire picker row:
 />
 ```
 
+## Headless usage
+
+`renderFlag`/`renderCountryItem` restyle the built-in UI; `usePhoneInput` skips it
+entirely. It carries all the same logic — locale-based default country,
+as-you-type formatting, E.164/validation, paste-to-detect-country — as plain
+state and callbacks, so you can drive your own input and picker UI with it
+(a bottom sheet, a `<select>` on web, a design-system field, ...):
+
+```tsx
+import { usePhoneInput } from '@kaisarsofi/react-native-phone-input';
+
+function CustomPhoneField() {
+  const { country, countries, setCountry, formattedNumber, onChangeText, isValid } =
+    usePhoneInput({ defaultCountry: 'US' });
+
+  return (
+    <View>
+      <Pressable onPress={() => setCountry(pickASheetChoiceFrom(countries))}>
+        <Text>{country.flag} +{country.dialCode}</Text>
+      </Pressable>
+      <TextInput value={formattedNumber} onChangeText={onChangeText} />
+      {!isValid && formattedNumber.length > 0 && <Text>Invalid number</Text>}
+    </View>
+  );
+}
+```
+
+It takes the same `defaultCountry` / `fallbackCountry` / `country` / `value` /
+`onChangeText` / `onChangeInternational` / `onChangeCountry` / `countries` /
+`excludedCountries` / `autoFormat` / `autoDetectCountry` options as
+`PhoneInputProps`, minus everything about rendering. See
+[`UsePhoneInputResult`](#usephoneinputresult) below for the full return shape.
+
 ## API reference
 
 ### `PhoneInputProps`
@@ -397,6 +432,30 @@ interface PhoneInputRef {
   getValue: () => PhoneInputValue;
 }
 ```
+
+### `usePhoneInput`
+
+```ts
+function usePhoneInput(options?: UsePhoneInputOptions): UsePhoneInputResult;
+```
+
+`UsePhoneInputOptions` is `PhoneInputProps` minus everything about rendering —
+`defaultCountry`, `fallbackCountry`, `country`, `value`, `onChangeText`,
+`onChangeInternational`, `onChangeCountry`, `countries`, `excludedCountries`,
+`autoFormat`, `autoDetectCountry`.
+
+#### `UsePhoneInputResult`
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `countries` | `Country[]` | The country list after `countries`/`excludedCountries` filtering |
+| `country` | `Country` | Currently selected country |
+| `setCountry` | `(country: CountryCode \| Country) => void` | Select a country directly — the custom-UI equivalent of picking a picker row |
+| `nationalNumber` | `string` | Raw digits typed so far, no dial code |
+| `formattedNumber` | `string` | `nationalNumber` run through `AsYouType` — wire this to your input's `value` |
+| `onChangeText` | `(text: string) => void` | Wire this to your input's `onChangeText` |
+| `value` | `PhoneInputValue` | The composed value — same shape `PhoneInput`'s `onChangeText` emits |
+| `isValid` | `boolean` | Shorthand for `value.isValid` |
 
 ### `CountryPickerStyles`
 

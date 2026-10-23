@@ -8,6 +8,11 @@ export type { Country, CountrySection } from './countries';
 export { Flag } from './Flag';
 export { PhoneInput } from './PhoneInput';
 export { CountryPicker } from './CountryPicker';
+export { usePhoneInput } from './usePhoneInput';
+export type {
+  UsePhoneInputOptions,
+  UsePhoneInputResult,
+} from './usePhoneInput';
 export { LIGHT_PALETTE, DARK_PALETTE, usePhoneInputPalette } from './theme';
 export type { PhoneInputPalette, PhoneInputColorScheme } from './theme';
 export type {

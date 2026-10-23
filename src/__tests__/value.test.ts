@@ -1,7 +1,12 @@
 import { describe, expect, it } from '@jest/globals';
 import { getCountryByCode } from '../countries';
 import type { Country } from '../countries';
-import { buildValue, callingCodeFor, readControlledValue } from '../value';
+import {
+  buildValue,
+  callingCodeFor,
+  detectCountrySwitch,
+  readControlledValue,
+} from '../value';
 
 const country = (code: string): Country => {
   const found = getCountryByCode(code);
@@ -93,5 +98,49 @@ describe('readControlledValue', () => {
     const read = readControlledValue('9876', country('IN'));
     expect(read.national).toBe('9876');
     expect(read.country.code).toBe('IN');
+  });
+});
+
+describe('detectCountrySwitch', () => {
+  const allCountries = [
+    country('US'),
+    country('IN'),
+    country('GB'),
+    country('JM'),
+  ];
+
+  it('detects a country switch from a pasted international number', () => {
+    const switched = detectCountrySwitch(
+      '+919876543210',
+      country('US'),
+      allCountries
+    );
+    expect(switched?.country.code).toBe('IN');
+    expect(switched?.nationalNumber).toBe('9876543210');
+  });
+
+  it('returns null for national-only text', () => {
+    expect(
+      detectCountrySwitch('4155552671', country('US'), allCountries)
+    ).toBeNull();
+  });
+
+  it('returns null when the detected country is already selected', () => {
+    expect(
+      detectCountrySwitch('+14155552671', country('US'), allCountries)
+    ).toBeNull();
+  });
+
+  it('returns null when the detected country is outside the allowed list', () => {
+    expect(
+      detectCountrySwitch('+919876543210', country('US'), [
+        country('US'),
+        country('GB'),
+      ])
+    ).toBeNull();
+  });
+
+  it('returns null for an unresolvable or incomplete international prefix', () => {
+    expect(detectCountrySwitch('+', country('US'), allCountries)).toBeNull();
   });
 });
