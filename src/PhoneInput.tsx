@@ -1,10 +1,7 @@
-import { AsYouType, parsePhoneNumberFromString } from 'libphonenumber-js';
-import type { CountryCode } from 'libphonenumber-js';
 import {
   forwardRef,
   useCallback,
   useImperativeHandle,
-  useMemo,
   useRef,
   useState,
   type ElementRef,
@@ -17,16 +14,10 @@ import {
   View,
   StyleSheet,
 } from 'react-native';
-import {
-  COUNTRIES,
-  getCountryByCallingCode,
-  getCountryByCode,
-  getDeviceCountry,
-} from './countries';
 import { CountryPicker } from './CountryPicker';
 import { Flag } from './Flag';
 import { usePhoneInputPalette } from './theme';
-import { buildValue, readControlledValue } from './value';
+import { usePhoneInput } from './usePhoneInput';
 import type { Country, PhoneInputProps, PhoneInputRef } from './types';
 
 export const PhoneInput = forwardRef<PhoneInputRef, PhoneInputProps>(
@@ -86,69 +77,32 @@ export const PhoneInput = forwardRef<PhoneInputRef, PhoneInputProps>(
       divider: theme?.dividerColor ?? palette.border,
     };
 
-    const countryList = useMemo(() => {
-      let list = COUNTRIES;
-      if (allowedCountries?.length) {
-        const allow = new Set(allowedCountries);
-        list = list.filter((c) => allow.has(c.code));
-      }
-      if (excludedCountries?.length) {
-        const exclude = new Set(excludedCountries);
-        list = list.filter((c) => !exclude.has(c.code));
-      }
-      return list;
-    }, [allowedCountries, excludedCountries]);
+    const {
+      countries: countryList,
+      country: selectedCountry,
+      setCountry,
+      nationalNumber,
+      formattedNumber: formattedNational,
+      onChangeText: handleChangeText,
+      value,
+    } = usePhoneInput({
+      defaultCountry,
+      fallbackCountry,
+      country: controlledCountry,
+      value: controlledValue,
+      onChangeText,
+      onChangeInternational,
+      onChangeCountry,
+      countries: allowedCountries,
+      excludedCountries,
+      autoFormat,
+      autoDetectCountry,
+    });
 
-    const [internalCountryCode, setInternalCountryCode] = useState<CountryCode>(
-      () => {
-        if (controlledCountry) return controlledCountry;
-        if (defaultCountry) return defaultCountry;
-        const device = getDeviceCountry();
-        if (device && countryList.some((c) => c.code === device.code)) {
-          return device.code;
-        }
-        return fallbackCountry;
-      }
-    );
-    const [internalNational, setInternalNational] = useState(() =>
-      controlledValue?.startsWith('+') ? '' : (controlledValue ?? '')
-    );
     const [pickerVisible, setPickerVisible] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
 
     const inputRef = useRef<ElementRef<typeof TextInput>>(null);
-
-    const baseCountry =
-      getCountryByCode(controlledCountry ?? internalCountryCode) ??
-      countryList[0] ??
-      COUNTRIES[0]!;
-
-    // A controlled international value carries its own country, so it is read
-    // back out of the value itself rather than tracked as separate state.
-    // Memoized because this parses, and every keystroke is a render.
-    const controlled = useMemo(
-      () =>
-        controlledValue !== undefined
-          ? readControlledValue(controlledValue, baseCountry)
-          : undefined,
-      [controlledValue, baseCountry]
-    );
-
-    const selectedCountry = controlledCountry
-      ? baseCountry
-      : (controlled?.country ?? baseCountry);
-    const nationalNumber = controlled?.national ?? internalNational;
-
-    const formattedNational = useMemo(() => {
-      if (!autoFormat) return nationalNumber;
-      const formatter = new AsYouType(selectedCountry.code);
-      return formatter.input(nationalNumber);
-    }, [nationalNumber, selectedCountry.code, autoFormat]);
-
-    const value = useMemo(
-      () => buildValue(nationalNumber, selectedCountry),
-      [nationalNumber, selectedCountry]
-    );
 
     useImperativeHandle(
       ref,
@@ -161,60 +115,12 @@ export const PhoneInput = forwardRef<PhoneInputRef, PhoneInputProps>(
       [value]
     );
 
-    const emitChange = useCallback(
-      (digits: string, country: Country) => {
-        const next = buildValue(digits, country);
-        onChangeText?.(next);
-        onChangeInternational?.(next.international);
-      },
-      [onChangeText, onChangeInternational]
-    );
-
-    const handleChangeText = useCallback(
-      (text: string) => {
-        if (autoDetectCountry && text.trim().startsWith('+')) {
-          const parsed = parsePhoneNumberFromString(text.trim());
-          const detected =
-            getCountryByCode(parsed?.country) ??
-            getCountryByCallingCode(parsed?.countryCallingCode);
-          if (
-            detected &&
-            detected.code !== selectedCountry.code &&
-            countryList.some((c) => c.code === detected.code)
-          ) {
-            const digits = parsed!.nationalNumber as string;
-            if (controlledValue === undefined) setInternalNational(digits);
-            if (controlledCountry === undefined)
-              setInternalCountryCode(detected.code);
-            onChangeCountry?.(detected);
-            emitChange(digits, detected);
-            return;
-          }
-        }
-
-        const digits = text.replace(/\D/g, '');
-        if (controlledValue === undefined) setInternalNational(digits);
-        emitChange(digits, selectedCountry);
-      },
-      [
-        autoDetectCountry,
-        controlledCountry,
-        controlledValue,
-        countryList,
-        emitChange,
-        onChangeCountry,
-        selectedCountry,
-      ]
-    );
-
     const handleSelectCountry = useCallback(
       (next: Country) => {
         setPickerVisible(false);
-        if (controlledCountry === undefined) setInternalCountryCode(next.code);
-        onChangeCountry?.(next);
-        emitChange(nationalNumber, next);
+        setCountry(next);
       },
-      [controlledCountry, emitChange, nationalNumber, onChangeCountry]
+      [setCountry]
     );
 
     const borderColor =

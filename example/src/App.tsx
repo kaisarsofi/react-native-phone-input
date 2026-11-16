@@ -8,11 +8,13 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
 import {
   PhoneInput,
+  usePhoneInput,
   type CountryDisplayMode,
   type PhoneInputRef,
   type PhoneInputValue,
@@ -83,6 +85,11 @@ export default function App() {
           value={groupAlphabetically}
           onChange={setGroupAlphabetically}
         />
+
+        <Text style={styles.sectionLabel}>
+          usePhoneInput (headless, no PhoneInput UI)
+        </Text>
+        <HeadlessDemo />
       </ScrollView>
     </View>
   );
@@ -161,6 +168,51 @@ function SegmentedRow<T extends string>({
           </Pressable>
         );
       })}
+    </View>
+  );
+}
+
+function HeadlessDemo() {
+  const {
+    country,
+    countries,
+    setCountry,
+    formattedNumber,
+    onChangeText,
+    isValid,
+  } = usePhoneInput({ fallbackCountry: 'IN' });
+
+  return (
+    <View style={styles.headlessField}>
+      <Pressable
+        style={styles.headlessCountry}
+        onPress={() => {
+          // A real app would open its own bottom sheet / modal here; cycling
+          // to the next country is enough to prove `setCountry` works.
+          const next =
+            countries[(countries.indexOf(country) + 1) % countries.length]!;
+          setCountry(next);
+        }}
+      >
+        <Text style={styles.headlessCountryText}>
+          {country.flag} +{country.dialCode}
+        </Text>
+      </Pressable>
+      <TextInput
+        style={styles.headlessInput}
+        value={formattedNumber}
+        onChangeText={onChangeText}
+        keyboardType="phone-pad"
+        placeholder="Phone number"
+      />
+      <Text
+        style={[
+          styles.headlessValidity,
+          isValid ? styles.headlessValidityOk : styles.headlessValidityPending,
+        ]}
+      >
+        {isValid ? 'Valid' : 'Invalid'}
+      </Text>
     </View>
   );
 }
@@ -280,5 +332,41 @@ const styles = StyleSheet.create({
   },
   toggleDotOn: {
     transform: [{ translateX: 18 }],
+  },
+  headlessField: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    borderColor: '#E5E7EB',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    minHeight: 46,
+    gap: 8,
+  },
+  headlessCountry: {
+    paddingVertical: 10,
+    paddingRight: 8,
+    borderRightWidth: StyleSheet.hairlineWidth * 2,
+    borderRightColor: '#E5E7EB',
+  },
+  headlessCountryText: {
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  headlessInput: {
+    flex: 1,
+    minWidth: 0,
+    paddingVertical: 10,
+    fontSize: 16,
+  },
+  headlessValidity: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  headlessValidityOk: {
+    color: '#34C759',
+  },
+  headlessValidityPending: {
+    color: '#9CA3AF',
   },
 });

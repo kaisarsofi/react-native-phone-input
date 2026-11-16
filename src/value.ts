@@ -68,3 +68,36 @@ export function readControlledValue(
     getCountryByCallingCode(callingCode);
   return { national, country: next ?? current };
 }
+
+/**
+ * Detects a paste-to-switch-country moment: `text` starts with "+" and its
+ * calling code resolves to a country other than `current`, in `countryList`.
+ * Returns `null` when there's nothing to switch to (not international,
+ * unresolvable calling code, or it resolves back to `current`) — the caller
+ * should fall back to plain digit extraction in that case.
+ */
+export function detectCountrySwitch(
+  text: string,
+  current: Country,
+  countryList: Country[]
+): { nationalNumber: string; country: Country } | null {
+  const trimmed = text.trim();
+  if (!trimmed.startsWith('+')) return null;
+
+  const parsed = parsePhoneNumberFromString(trimmed);
+  const detected =
+    getCountryByCode(parsed?.country) ??
+    getCountryByCallingCode(parsed?.countryCallingCode);
+
+  if (
+    !detected ||
+    detected.code === current.code ||
+    !countryList.some((c) => c.code === detected.code)
+  ) {
+    return null;
+  }
+  return {
+    nationalNumber: parsed!.nationalNumber as string,
+    country: detected,
+  };
+}
