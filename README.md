@@ -170,7 +170,22 @@ No peer native dependencies, no `expo install`, no `pod install`. `libphonenumbe
 
 ### Flag rendering
 
-Flags render as the real Unicode flag emoji (e.g. 🇺🇸) — no images, no assets, zero setup. This depends on the device having color flag glyphs in its system font, which nearly every iOS and Android device does. If you need a different look, swap in your own with `renderFlag` (see [Custom rows](#custom-rows) below).
+Flags render as the real Unicode flag emoji (e.g. 🇺🇸) by default — no images, no assets, zero setup. This depends on the device having color flag glyphs in its system font. iOS and recent Android (13+) have full coverage, but on some older Android versions and OEM skins, flag emoji render as a two-letter code or a blank box instead of the flag — a long-standing platform gap, not something this library can patch from JS.
+
+If that shows up for your users, swap in an image-based flag with `renderFlag` instead — it takes over per-row, so you keep everything else (search, the alphabet index, theming):
+
+```tsx
+<PhoneInput
+  renderFlag={(country) => (
+    <Image
+      source={{ uri: `https://flagcdn.com/w40/${country.code.toLowerCase()}.png` }}
+      style={{ width: 24, height: 18, borderRadius: 2 }}
+    />
+  )}
+/>
+```
+
+That example pulls from a CDN, so it needs network access and doesn't render offline — for a fully offline set, bundle local flag assets (e.g. one SVG/PNG per ISO code via `react-native-svg` or your app's own asset pipeline) and swap them in by `country.code` the same way.
 
 ### Country picker: alphabet index & grouping
 
